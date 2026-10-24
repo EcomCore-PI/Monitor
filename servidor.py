@@ -46,7 +46,7 @@ CONFIG_BANCO = {
 
 if not all((CONFIG_BANCO["host"], CONFIG_BANCO["user"], CONFIG_BANCO["database"])):
     raise RuntimeError("Configure DB_HOST, DB_USER e DB_DATABASE no .env.dev.")
-x
+
 env_id_docker = os.getenv("ID_SERVIDOR")
 if env_id_docker:
     ID_SERVIDOR = int(env_id_docker)
