@@ -14,7 +14,7 @@ import psutil
 # ---------------------------------------------------------------------------
 PASTA_ATUAL = os.path.dirname(os.path.abspath(__file__))
 CAMINHO_ENV = os.path.join(PASTA_ATUAL, ".env.dev")
-INTERVALO_GRAVACAO = 5
+INTERVALO_GRAVACAO = 60
 LIMITE_HISTORICO = 30
 LIMITE_ALERTAS = 50
 
@@ -46,18 +46,22 @@ CONFIG_BANCO = {
 
 if not all((CONFIG_BANCO["host"], CONFIG_BANCO["user"], CONFIG_BANCO["database"])):
     raise RuntimeError("Configure DB_HOST, DB_USER e DB_DATABASE no .env.dev.")
-
-try:
-    ID_SERVIDOR = int(ENV["ID_SERVIDOR"])
-except (KeyError, ValueError) as erro:
-    raise RuntimeError("Configure ID_SERVIDOR com o ID cadastrado em servidor.") from erro
+x
+env_id_docker = os.getenv("ID_SERVIDOR")
+if env_id_docker:
+    ID_SERVIDOR = int(env_id_docker)
+else:
+    try:
+        ID_SERVIDOR = int(ENV["ID_SERVIDOR"])
+    except (KeyError, ValueError) as erro:
+        raise RuntimeError("Configure ID_SERVIDOR com o ID cadastrado em servidor.") from erro
 
 # Chaves iguais a tipo_componente.nome; valores iguais aos campos coletados abaixo.
 RECURSOS = {
     "CPU": "cpu_percent",
     "RAM": "memoria_percent",
     "Disco": "disco_percent",
-}
+ }
 
 
 # ---------------------------------------------------------------------------
