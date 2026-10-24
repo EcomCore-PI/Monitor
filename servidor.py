@@ -422,12 +422,13 @@ class Servidor(SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(resposta)
 
-    def do_GET(self):
-	url_analisada = urlparse(self.path)
+def do_GET(self):
+        url_analisada = urlparse(self.path)
         caminho = url_analisada.path
-	parametros = parse_qs(url_analisada.query)
+        parametros = parse_qs(url_analisada.query)
 
-	try:
+        # Pega o ID da URL (?id_servidor=X) ou usa o padrão do container se não for passado
+        try:
             id_solicitado = int(parametros.get("id_servidor", [ID_SERVIDOR])[0])
         except (ValueError, TypeError):
             id_solicitado = ID_SERVIDOR
