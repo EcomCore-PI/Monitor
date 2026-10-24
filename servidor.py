@@ -304,7 +304,7 @@ def loop_gravacao():
 # ---------------------------------------------------------------------------
 # APIs consumidas pela página servida neste mesmo processo Python.
 # ---------------------------------------------------------------------------
-def buscar_dados_dashboard():
+def buscar_dados_dashboard(id_servidor):
     conexao = mysql.connector.connect(**CONFIG_BANCO)
     cursor = None
     try:
@@ -353,7 +353,7 @@ def buscar_dados_dashboard():
         conexao.close()
 
 
-def buscar_alertas():
+def buscar_alertas(id_servidor):
     conexao = mysql.connector.connect(**CONFIG_BANCO)
     cursor = None
     try:
@@ -423,11 +423,18 @@ class Servidor(SimpleHTTPRequestHandler):
         self.wfile.write(resposta)
 
     def do_GET(self):
-        caminho = self.path.split("?", 1)[0]
+	url_analisada = urlparse(self.path)
+        caminho = url_analisada.path
+	parametros = parse_qs(url_analisada.query)
+
+	try:
+            id_solicitado = int(parametros.get("id_servidor", [ID_SERVIDOR])[0])
+        except (ValueError, TypeError):
+            id_solicitado = ID_SERVIDOR
 
         if caminho == "/dados":
             try:
-                self.responder_json(buscar_dados_dashboard())
+                self.responder_json(buscar_dados_dashboard(id_solicitado))
             except Exception as erro:
                 print(f"[ERRO] Consulta de métricas falhou: {erro}")
                 self.responder_json(
@@ -438,7 +445,7 @@ class Servidor(SimpleHTTPRequestHandler):
 
         if caminho == "/alertas":
             try:
-                self.responder_json(buscar_alertas())
+                self.responder_json(buscar_alertas(id_solicitado))
             except Exception as erro:
                 print(f"[ERRO] Consulta de alertas falhou: {erro}")
                 self.responder_json(

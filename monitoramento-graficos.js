@@ -91,11 +91,15 @@
         requisicao = controller;
         const limite = setTimeout(() => controller.abort(), 8000);
 
-        try {
-            const resposta = await fetch('/dados', {
+       try {
+
+	    const idServidorDinamico = window.CONFIG_SERVIDOR?.id || 1;
+
+            const resposta = await fetch(`/dados?id_servidor=${idServidorDinamico}`, {
                 cache: 'no-store',
                 signal: controller.signal,
             });
+
             if (!resposta.ok) throw new Error(`HTTP ${resposta.status}`);
 
             const dados = await resposta.json();
@@ -209,10 +213,13 @@
         const limite = setTimeout(() => controller.abort(), 8000);
 
         try {
-            const resposta = await fetch('/alertas', {
+            const idServidorDinamico = window.CONFIG_SERVIDOR?.id || 1;
+
+            const resposta = await fetch(`/alertas?id_servidor=${idServidorDinamico}`, {
                 cache: 'no-store',
                 signal: controller.signal,
             });
+
             if (!resposta.ok) throw new Error(`HTTP ${resposta.status}`);
 
             const dados = await resposta.json();
