@@ -1,4 +1,5 @@
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+from urllib.parse import parse_qs, urlparse
 from datetime import datetime
 import json
 import os
@@ -325,7 +326,7 @@ def buscar_dados_dashboard(id_servidor):
                 ORDER BY cap.horario DESC, cap.id DESC
                 LIMIT %s
                 """,
-                (ID_SERVIDOR, tipo, LIMITE_HISTORICO),
+                (id_servidor, tipo, LIMITE_HISTORICO),
             )
             linhas = cursor.fetchall()
             for linha in reversed(linhas):
@@ -382,7 +383,7 @@ def buscar_alertas(id_servidor):
             ORDER BY a.data DESC, a.id DESC
             LIMIT %s
             """,
-            (ID_SERVIDOR, LIMITE_ALERTAS),
+            (id_servidor, LIMITE_ALERTAS),
         )
 
         alertas = []
@@ -422,7 +423,7 @@ class Servidor(SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(resposta)
 
-def do_GET(self):
+    def do_GET(self):
         url_analisada = urlparse(self.path)
         caminho = url_analisada.path
         parametros = parse_qs(url_analisada.query)
