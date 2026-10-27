@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="pt-br">
 
 <head>
@@ -7,7 +8,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="icon" href="./imgs/EcomCore.png">
     <link rel="stylesheet" href="dashboard.css">
-    <script src="config.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
@@ -41,37 +41,37 @@
             <p>Métricas de hardware atualizadas em tempo real</p>
         </header>
 
-        <section class="kpi-grid" aria-label="Indicadores de hardware">
+        <section class="kpi-grid" aria-label="Indicadores de monitoramento">
             <article class="kpi-card">
-                <p class="kpi-label">Processador</p>
-                <p class="kpi-value" id="kpi-cpu">—</p>
-                <p class="kpi-description">Utilização da CPU</p>
-                <p class="kpi-detail" id="kpi-cpu-info">Aguardando dados</p>
+                <p class="kpi-label">Componente com Mais alertas</p>
+                <p class="kpi-value" id="kpi-recurso-alertas">—</p>
+                <p class="kpi-description">Componente com mais alertas</p>
+                <p class="kpi-detail" id="kpi-recurso-alertas-info"></p>
             </article>
             <article class="kpi-card">
-                <p class="kpi-label">Memória RAM</p>
-                <p class="kpi-value" id="kpi-ram">—</p>
-                <p class="kpi-description">Memória em uso</p>
-                <p class="kpi-detail" id="kpi-ram-info">Aguardando dados</p>
+                <p class="kpi-label">Pico de utilização de um Componente</p>
+                <p class="kpi-value" id="kpi-pico">—</p>
+                <p class="kpi-description">Maior uso registrado por componente</p>
+                <p class="kpi-detail" id="kpi-pico-info"></p>
             </article>
             <article class="kpi-card">
-                <p class="kpi-label">Disco</p>
-                <p class="kpi-value" id="kpi-disco">—</p>
-                <p class="kpi-description">Espaço ocupado</p>
-                <p class="kpi-detail" id="kpi-disco-info">Aguardando dados</p>
+                <p class="kpi-label">Espaço livre em disco</p>
+                <p class="kpi-value" id="kpi-disco-livre">—</p>
+                <p class="kpi-description">Capacidade restante até 100%</p>
+                <p class="kpi-detail" id="kpi-disco-livre-info"></p>
             </article>
             <article class="kpi-card">
-                <p class="kpi-label">Rede</p>
-                <p class="kpi-value" id="kpi-rede">—</p>
-                <p class="kpi-description">Métrica ainda não coletada</p>
-                <p class="kpi-detail" id="kpi-rede-info">Rede não integrada</p>
+                <p class="kpi-label">Alertas críticos</p>
+                <p class="kpi-value" id="kpi-criticos">—</p>
+                <p class="kpi-description">Registrados nas últimas 24 horas</p>
+                <p class="kpi-detail" id="kpi-criticos-info"></p>
             </article>
         </section>
         <p class="metrics-status" id="metrics-status" role="status">Aguardando primeira leitura…</p>
         <div class="monitoring-layout">
         <section class="dashboard-grid" aria-label="Gráficos de hardware">
             <article class="card chart-card">
-                <header class="chart-heading"><h3>Uso de CPU</h3><p>Carga do processador ao longo do tempo</p></header>
+                <header class="chart-heading"><h3>Uso de CPU</h3><p>Uso do processador utilizada</p></header>
                 <div class="chart-container"><canvas id="chartCpu" role="img" aria-label="Carga do processador ao longo do tempo">Carga do processador ao longo do tempo</canvas></div>
             </article>
             <article class="card chart-card">
@@ -79,27 +79,26 @@
                 <div class="chart-container"><canvas id="chartRam" role="img" aria-label="Percentual de memória utilizada">Percentual de memória utilizada</canvas></div>
             </article>
             <article class="card chart-card">
-                <header class="chart-heading"><h3>Uso de disco</h3><p>Ocupação do armazenamento</p></header>
+                <header class="chart-heading"><h3>Uso de disco</h3><p>Armazenamento</p></header>
                 <div class="chart-container"><canvas id="chartDisco" role="img" aria-label="Ocupação do armazenamento">Ocupação do armazenamento</canvas></div>
             </article>
             <article class="card chart-card">
-                <header class="chart-heading"><h3>Tráfego de rede</h3><p>Integração de rede ainda não configurada</p></header>
-                <div class="chart-container"><p class="alerts-empty">A coleta atual grava CPU, RAM e disco.</p></div>
+                <header class="chart-heading"><h3>Tráfego de rede</h3><p>Tráfego de rede ainda não configurada</p></header>
+                <div class="chart-container"><p class="alerts-empty">A coleta atual grava somente CPU, RAM e Disco.</p></div>
             </article>
         </section>
         <aside class="alerts-panel" aria-labelledby="alerts-title">
             <header class="alerts-heading">
-                <div><h3 id="alerts-title">Histórico de alertas</h3><p>Eventos gravados no banco</p></div>
+                <div><h3 id="alerts-title">Histórico de alertas</h3></div>
                 <span class="alerts-count" id="alerts-count" aria-label="Quantidade de alertas">—</span>
             </header>
-            <p class="alerts-status" id="alerts-status" role="status">Aguardando primeira leitura…</p>
+            <p class="alerts-status" id="alerts-status" role="status"></p>
             <div class="alerts-table-wrapper" tabindex="0" role="region" aria-label="Histórico de alertas registrados">
                 <table class="alerts-table">
-                    <thead><tr><th scope="col">Recurso</th><th scope="col">Valor</th><th scope="col">Limite</th><th scope="col">Nível</th><th scope="col">Data</th></tr></thead>
+                    <thead><tr><th scope="col">Componente</th><th scope="col">Valor</th><th scope="col">Limite</th><th scope="col">Nível</th><th scope="col">Data</th></tr></thead>
                     <tbody id="alerts-body"><tr><td colspan="5" class="alerts-empty">Aguardando dados do monitoramento.</td></tr></tbody>
                 </table>
             </div>
-            <p class="alerts-note">Os limites vêm da métrica ligada à especificação técnica. A tabela registra ATENCAO e CRITICO quando o uso entra em um nível de alerta ou muda de nível.</p>
         </aside>
         </div>
     </main>

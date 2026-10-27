@@ -1,6 +1,6 @@
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import parse_qs, urlparse
 from datetime import datetime
+from urllib.parse import urlparse, parse_qs
 import json
 import os
 import threading
@@ -14,8 +14,17 @@ import psutil
 # Configuração
 # ---------------------------------------------------------------------------
 PASTA_ATUAL = os.path.dirname(os.path.abspath(__file__))
-CAMINHO_ENV = os.path.join(PASTA_ATUAL, ".env.dev")
-INTERVALO_GRAVACAO = 60
+CAMINHO_ENV = os.environ.get("ENV_PATH") or next(
+    (
+        c for c in (
+            os.path.join(PASTA_ATUAL, ".env.dev"),
+            os.path.abspath(os.path.join(PASTA_ATUAL, "..", "..", ".env.dev")),
+        )
+        if os.path.exists(c)
+    ),
+    os.path.join(PASTA_ATUAL, ".env.dev"),
+)
+INTERVALO_GRAVACAO = 5
 LIMITE_HISTORICO = 30
 LIMITE_ALERTAS = 50
 
@@ -48,21 +57,17 @@ CONFIG_BANCO = {
 if not all((CONFIG_BANCO["host"], CONFIG_BANCO["user"], CONFIG_BANCO["database"])):
     raise RuntimeError("Configure DB_HOST, DB_USER e DB_DATABASE no .env.dev.")
 
-env_id_docker = os.getenv("ID_SERVIDOR")
-if env_id_docker:
-    ID_SERVIDOR = int(env_id_docker)
-else:
-    try:
-        ID_SERVIDOR = int(ENV["ID_SERVIDOR"])
-    except (KeyError, ValueError) as erro:
-        raise RuntimeError("Configure ID_SERVIDOR com o ID cadastrado em servidor.") from erro
+try:
+    ID_SERVIDOR = int(ENV["ID_SERVIDOR"])
+except (KeyError, ValueError) as erro:
+    raise RuntimeError("Configure ID_SERVIDOR com o ID cadastrado em servidor.") from erro
 
 # Chaves iguais a tipo_componente.nome; valores iguais aos campos coletados abaixo.
 RECURSOS = {
     "CPU": "cpu_percent",
     "RAM": "memoria_percent",
     "Disco": "disco_percent",
- }
+}
 
 
 # ---------------------------------------------------------------------------
@@ -305,7 +310,7 @@ def loop_gravacao():
 # ---------------------------------------------------------------------------
 # APIs consumidas pela página servida neste mesmo processo Python.
 # ---------------------------------------------------------------------------
-def buscar_dados_dashboard(id_servidor):
+def buscar_dados_dashboard(id_servidor=ID_SERVIDOR):
     conexao = mysql.connector.connect(**CONFIG_BANCO)
     cursor = None
     try:
@@ -347,14 +352,14 @@ def buscar_dados_dashboard(id_servidor):
             if historico[tipo]
         ]
         atual["horario_formatado"] = horarios[-1] if horarios else None
-        return {"historico": historico, "atual": atual}
+        return {"historico": historico, "atual": atual, "kpis": buscar_kpis(id_servidor)}
     finally:
         if cursor is not None:
             cursor.close()
         conexao.close()
 
 
-def buscar_alertas(id_servidor):
+def buscar_alertas(id_servidor=ID_SERVIDOR):
     conexao = mysql.connector.connect(**CONFIG_BANCO)
     cursor = None
     try:
@@ -413,6 +418,87 @@ def buscar_alertas(id_servidor):
         conexao.close()
 
 
+def buscar_kpis(id_servidor=ID_SERVIDOR):
+    """Calcula os quatro indicadores usando as últimas 24 horas de dados."""
+    conexao = mysql.connector.connect(**CONFIG_BANCO)
+    cursor = None
+    try:
+        cursor = conexao.cursor(dictionary=True)
+        cursor.execute(
+            """
+            SELECT tc.nome AS recurso, cap.valor, cap.horario, cap.id,
+                   m.limite_atencao
+            FROM captura cap
+            JOIN especificacao_tecnica et ON et.id = cap.fk_especificacao_tecnica
+            JOIN metrica m ON m.id = et.fk_metrica
+            JOIN componente c ON c.id = et.fk_componente
+            JOIN tipo_componente tc ON tc.id = c.fk_tipo_componente
+            WHERE et.fk_servidor = %s
+              AND et.ativo = 1
+              AND cap.horario >= NOW() - INTERVAL 24 HOUR
+              AND tc.nome IN ('CPU', 'RAM', 'Disco')
+            ORDER BY tc.nome, cap.horario, cap.id
+            """,
+            (id_servidor,),
+        )
+        leituras = {}
+        for linha in cursor.fetchall():
+            valor = float(linha["valor"])
+            leituras.setdefault(linha["recurso"], []).append(valor)
+
+        pico = None
+        for recurso, valores in leituras.items():
+            valor_pico = max(valores)
+            if pico is None or valor_pico > pico["valor"]:
+                pico = {"recurso": recurso, "valor": valor_pico}
+
+        espaco_livre_disco = None
+        if id_servidor == ID_SERVIDOR:
+            uso_disco = psutil.disk_usage(os.path.abspath(os.sep))
+            espaco_livre_disco = {
+                "livre_gb": uso_disco.free / (1024 ** 3),
+                "total_gb": uso_disco.total / (1024 ** 3),
+            }
+
+        cursor.execute(
+            """
+            SELECT tc.nome AS recurso,
+                   COUNT(*) AS quantidade,
+                   SUM(CASE WHEN a.nivel = 'CRITICO' THEN 1 ELSE 0 END) AS criticos
+            FROM alerta a
+            JOIN captura cap ON cap.id = a.fk_captura
+            JOIN especificacao_tecnica et ON et.id = cap.fk_especificacao_tecnica
+            JOIN componente c ON c.id = et.fk_componente
+            JOIN tipo_componente tc ON tc.id = c.fk_tipo_componente
+            WHERE et.fk_servidor = %s
+              AND a.data >= NOW() - INTERVAL 24 HOUR
+            GROUP BY tc.nome
+            ORDER BY quantidade DESC, tc.nome
+            """,
+            (id_servidor,),
+        )
+        alertas_por_recurso = cursor.fetchall()
+        recurso_mais_alertas = None
+        if alertas_por_recurso:
+            primeiro = alertas_por_recurso[0]
+            recurso_mais_alertas = {
+                "recurso": primeiro["recurso"],
+                "quantidade": int(primeiro["quantidade"]),
+            }
+        total_criticos = sum(int(linha["criticos"] or 0) for linha in alertas_por_recurso)
+
+        return {
+            "recurso_mais_alertas": recurso_mais_alertas,
+            "pico_utilizacao": pico,
+            "espaco_livre_disco": espaco_livre_disco,
+            "alertas_criticos_24h": total_criticos,
+        }
+    finally:
+        if cursor is not None:
+            cursor.close()
+        conexao.close()
+
+
 class Servidor(SimpleHTTPRequestHandler):
     def responder_json(self, dados, codigo=200):
         resposta = json.dumps(dados, ensure_ascii=False).encode("utf-8")
@@ -424,19 +510,16 @@ class Servidor(SimpleHTTPRequestHandler):
         self.wfile.write(resposta)
 
     def do_GET(self):
-        url_analisada = urlparse(self.path)
-        caminho = url_analisada.path
-        parametros = parse_qs(url_analisada.query)
-
-        # Pega o ID da URL (?id_servidor=X) ou usa o padrão do container se não for passado
+        url = urlparse(self.path)
+        caminho = url.path
         try:
-            id_solicitado = int(parametros.get("id_servidor", [ID_SERVIDOR])[0])
-        except (ValueError, TypeError):
-            id_solicitado = ID_SERVIDOR
+            id_servidor = int(parse_qs(url.query).get("id_servidor", [ID_SERVIDOR])[0])
+        except ValueError:
+            id_servidor = ID_SERVIDOR
 
         if caminho == "/dados":
             try:
-                self.responder_json(buscar_dados_dashboard(id_solicitado))
+                self.responder_json(buscar_dados_dashboard(id_servidor))
             except Exception as erro:
                 print(f"[ERRO] Consulta de métricas falhou: {erro}")
                 self.responder_json(
@@ -447,7 +530,7 @@ class Servidor(SimpleHTTPRequestHandler):
 
         if caminho == "/alertas":
             try:
-                self.responder_json(buscar_alertas(id_solicitado))
+                self.responder_json(buscar_alertas(id_servidor))
             except Exception as erro:
                 print(f"[ERRO] Consulta de alertas falhou: {erro}")
                 self.responder_json(
