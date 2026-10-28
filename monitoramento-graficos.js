@@ -93,12 +93,15 @@ function idServidorAtual() { const n = parseInt(new URLSearchParams(window.locat
         texto('kpi-pico-info', pico ? `${pico.recurso}` : '');
 
         const discoLivre = dados.espaco_livre_disco;
+        const discoLivrePercent = dados.disco_livre_percent;
         texto('kpi-disco-livre', discoLivre
             ? `${formato.format(discoLivre.livre_gb)} GB`
-            : '—');
+            : (discoLivrePercent != null ? percentual(discoLivrePercent) : '—'));
         texto('kpi-disco-livre-info', discoLivre
             ? `de ${formato.format(discoLivre.total_gb)} GB no total`
-            : 'Capacidade do disco indisponível');
+            : (discoLivrePercent != null
+                ? 'livre (capacidade em GB indisponível)'
+                : 'Capacidade do disco indisponível'));
 
         texto('kpi-criticos', String(dados.alertas_criticos_24h ?? 0));
         texto('kpi-criticos-info', '');

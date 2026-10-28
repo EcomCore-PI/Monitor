@@ -487,10 +487,16 @@ def buscar_kpis(id_servidor=ID_SERVIDOR):
             }
         total_criticos = sum(int(linha["criticos"] or 0) for linha in alertas_por_recurso)
 
+        disco_uso = leituras.get("Disco")
+        disco_livre_percent = (
+            round(100 - disco_uso[-1], 1) if disco_uso else None
+        )
+
         return {
             "recurso_mais_alertas": recurso_mais_alertas,
             "pico_utilizacao": pico,
             "espaco_livre_disco": espaco_livre_disco,
+            "disco_livre_percent": disco_livre_percent,
             "alertas_criticos_24h": total_criticos,
         }
     finally:
