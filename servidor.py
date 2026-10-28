@@ -67,7 +67,10 @@ RECURSOS = {
     "CPU": "cpu_percent",
     "RAM": "memoria_percent",
     "Disco": "disco_percent",
+    "Rede Recebida": "rede_recebida_mib",
+    "Rede Enviada": "rede_enviada_mib",
 }
+RECURSOS_OBRIGATORIOS = {"CPU", "RAM", "Disco"}
 
 
 # ---------------------------------------------------------------------------
@@ -78,11 +81,15 @@ def coletar_dados():
     memoria = psutil.virtual_memory()
     caminho_disco = os.path.abspath(os.sep)
     disco = psutil.disk_usage(caminho_disco)
+    rede = psutil.net_io_counters()
 
     return {
         "cpu_percent": float(cpu_percent),
         "memoria_percent": float(memoria.percent),
         "disco_percent": float(disco.percent),
+        # Contadores acumulados em MiB; a velocidade é calculada entre capturas.
+        "rede_recebida_mib": rede.bytes_recv / (1024 ** 2),
+        "rede_enviada_mib": rede.bytes_sent / (1024 ** 2),
     }
 
 
@@ -103,7 +110,8 @@ def preparar_especificacoes():
                 "Cadastre o servidor e confira o .env.dev."
             )
 
-        for tipo in RECURSOS:
+        # CPU, RAM e Disco usam os componentes e métricas já definidos pelo projeto.
+        for tipo in RECURSOS_OBRIGATORIOS:
             cursor.execute(
                 """
                 SELECT c.id AS componente_id
@@ -158,6 +166,51 @@ def preparar_especificacoes():
                     (metrica_id, especificacao["id"]),
                 )
 
+        # O esquema original tem apenas o tipo genérico "Rede". Criamos tipos
+        # separados para manter recebimento e envio identificáveis em captura.
+        for tipo, descricao in (
+            ("Rede Recebida", "Contador de bytes recebidos"),
+            ("Rede Enviada", "Contador de bytes enviados"),
+        ):
+            cursor.execute("SELECT id FROM tipo_componente WHERE nome = %s LIMIT 1", (tipo,))
+            tipo_linha = cursor.fetchone()
+            if tipo_linha is None:
+                cursor.execute(
+                    "INSERT INTO tipo_componente (nome, unidade_medida) VALUES (%s, 'MiB')",
+                    (tipo,),
+                )
+                tipo_id = cursor.lastrowid
+            else:
+                tipo_id = tipo_linha["id"]
+
+            cursor.execute(
+                "SELECT id FROM componente WHERE fk_tipo_componente = %s AND descricao = %s LIMIT 1",
+                (tipo_id, descricao),
+            )
+            componente_linha = cursor.fetchone()
+            if componente_linha is None:
+                cursor.execute(
+                    "INSERT INTO componente (descricao, fk_tipo_componente) VALUES (%s, %s)",
+                    (descricao, tipo_id),
+                )
+                componente_id = cursor.lastrowid
+            else:
+                componente_id = componente_linha["id"]
+
+            cursor.execute(
+                "SELECT id FROM especificacao_tecnica WHERE fk_servidor = %s AND fk_componente = %s AND ativo = 1 LIMIT 1",
+                (ID_SERVIDOR, componente_id),
+            )
+            if cursor.fetchone() is None:
+                cursor.execute(
+                    "INSERT INTO metrica (limite_atencao, limite_critico) VALUES (0, 0)"
+                )
+                metrica_id = cursor.lastrowid
+                cursor.execute(
+                    "INSERT INTO especificacao_tecnica (fk_servidor, fk_componente, fk_metrica, ativo) VALUES (%s, %s, %s, 1)",
+                    (ID_SERVIDOR, componente_id, metrica_id),
+                )
+
         conexao.commit()
         print(f"[OK] Especificações técnicas prontas para servidor {ID_SERVIDOR}.")
 
@@ -187,7 +240,7 @@ def carregar_especificacoes(cursor):
         JOIN metrica m ON m.id = et.fk_metrica
         WHERE et.fk_servidor = %s
           AND et.ativo = 1
-          AND tc.nome IN ('CPU', 'RAM', 'Disco')
+          AND tc.nome IN ('CPU', 'RAM', 'Disco', 'Rede Recebida', 'Rede Enviada')
         ORDER BY et.id
         """,
         (ID_SERVIDOR,),
@@ -204,7 +257,7 @@ def carregar_especificacoes(cursor):
             "limite_critico": float(linha["limite_critico"]),
         }
 
-    faltando = set(RECURSOS) - set(especificacoes)
+    faltando = RECURSOS_OBRIGATORIOS - set(especificacoes)
     if faltando:
         raise ValueError(
             "Especificações ausentes para: " + ", ".join(sorted(faltando))
@@ -241,26 +294,32 @@ def gravar_capturas(dados):
         especificacoes = carregar_especificacoes(cursor)
 
         for tipo, campo in RECURSOS.items():
+            if tipo not in especificacoes:
+                continue
             valor = dados.get(campo)
-            if not isinstance(valor, (int, float)) or not 0 <= valor <= 100:
+            if not isinstance(valor, (int, float)) or valor < 0:
+                continue
+            if tipo in RECURSOS_OBRIGATORIOS and valor > 100:
                 continue
 
             especificacao = especificacoes[tipo]
-            cursor.execute(
-                """
-                SELECT cap.valor
-                FROM captura cap
-                WHERE cap.fk_especificacao_tecnica = %s
-                ORDER BY cap.horario DESC, cap.id DESC
-                LIMIT 1
-                """,
-                (especificacao["id"],),
-            )
-            leitura_anterior = cursor.fetchone()
-            nivel_anterior = (
-                calcular_nivel(float(leitura_anterior["valor"]), especificacao)
-                if leitura_anterior else None
-            )
+            nivel_anterior = None
+            if tipo in RECURSOS_OBRIGATORIOS:
+                cursor.execute(
+                    """
+                    SELECT cap.valor
+                    FROM captura cap
+                    WHERE cap.fk_especificacao_tecnica = %s
+                    ORDER BY cap.horario DESC, cap.id DESC
+                    LIMIT 1
+                    """,
+                    (especificacao["id"],),
+                )
+                leitura_anterior = cursor.fetchone()
+                nivel_anterior = (
+                    calcular_nivel(float(leitura_anterior["valor"]), especificacao)
+                    if leitura_anterior else None
+                )
 
             cursor.execute(
                 """
@@ -271,7 +330,10 @@ def gravar_capturas(dados):
             )
             id_captura = cursor.lastrowid
 
-            nivel_atual = calcular_nivel(float(valor), especificacao)
+            nivel_atual = (
+                calcular_nivel(float(valor), especificacao)
+                if tipo in RECURSOS_OBRIGATORIOS else None
+            )
             if nivel_atual is not None and nivel_atual != nivel_anterior:
                 cursor.execute(
                     """
@@ -300,7 +362,9 @@ def loop_gravacao():
             print(
                 f"[OK] CPU {dados['cpu_percent']:.1f}% | "
                 f"RAM {dados['memoria_percent']:.1f}% | "
-                f"Disco {dados['disco_percent']:.1f}% gravados no banco."
+                f"Disco {dados['disco_percent']:.1f}% | "
+                f"Rede recebida {dados['rede_recebida_mib']:.3f} MiB | "
+                f"enviada {dados['rede_enviada_mib']:.3f} MiB gravados no banco."
             )
         except Exception as erro:
             print(f"[ERRO] Não foi possível gravar a coleta: {erro}")
@@ -339,6 +403,7 @@ def buscar_dados_dashboard(id_servidor=ID_SERVIDOR):
                 historico[tipo].append({
                     "valor": float(linha["valor"]),
                     "horario": horario.strftime("%H:%M:%S"),
+                    "timestamp": horario.isoformat(),
                 })
 
         atual = {}

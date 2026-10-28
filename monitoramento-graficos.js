@@ -25,6 +25,12 @@ function idServidorAtual() { const n = parseInt(new URLSearchParams(window.locat
             : '—';
     }
 
+    function medidaRede(valor) {
+        return typeof valor === 'number' && Number.isFinite(valor)
+            ? `${formato.format(valor)} Mbps`
+            : '—';
+    }
+
     function criarGrafico(id, rotulo, cor) {
         return new Chart(document.getElementById(id), {
             type: 'line',
@@ -76,6 +82,27 @@ function idServidorAtual() { const n = parseInt(new URLSearchParams(window.locat
         RAM: criarGrafico('chartRam', 'RAM', '#34d399'),
         Disco: criarGrafico('chartDisco', 'Disco', '#c084fc'),
     };
+
+    const graficoRede = new Chart(document.getElementById('chartRede'), {
+        type: 'line',
+        data: { labels: [], datasets: [
+            { label: 'Velocidade da rede (download)', data: [], borderColor: '#60a5fa', backgroundColor: '#60a5fa18', fill: false, borderWidth: 2, tension: 0.25, pointRadius: 0 },
+            { label: 'Velocidade da rede (upload)', data: [], borderColor: '#34d399', backgroundColor: '#34d39918', fill: false, borderWidth: 2, tension: 0.25, pointRadius: 0 },
+        ] },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            animation: reduzMovimento.matches ? false : { duration: 250 },
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: { display: true, position: 'bottom' },
+                tooltip: { callbacks: { label: item => `${item.dataset.label}: ${medidaRede(item.parsed.y)}` } },
+            },
+            scales: {
+                x: { grid: { display: false }, ticks: { maxTicksLimit: 5, maxRotation: 0 }, title: { display: true, text: 'Horário' } },
+                y: { beginAtZero: true, ticks: { callback: valor => `${valor} Mbps` }, title: { display: true, text: 'Velocidade' } },
+            },
+        },
+    });
 
     function preencherGrafico(grafico, leituras) {
         const pontos = Array.isArray(leituras) ? leituras.slice(-MAX_PONTOS) : [];
@@ -139,6 +166,39 @@ function idServidorAtual() { const n = parseInt(new URLSearchParams(window.locat
                 preencherGrafico(grafico, dados.historico[tipo]);
             }
 
+            const recebidas = dados.historico['Rede Recebida'] || [];
+            const enviadas = dados.historico['Rede Enviada'] || [];
+            const calcularTaxasMbps = leituras => {
+                const ordenadas = [...leituras].sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+                return ordenadas.slice(1).map((leitura, indice) => {
+                    const anterior = ordenadas[indice];
+                    const segundos = (Date.parse(leitura.timestamp) - Date.parse(anterior.timestamp)) / 1000;
+                    const diferencaMiB = leitura.valor - anterior.valor;
+                    return Number.isFinite(diferencaMiB) && diferencaMiB >= 0 && segundos > 0
+                        ? (diferencaMiB * 8.388608) / segundos
+                        : null;
+                }).map((taxa, indice) => ({ timestamp: ordenadas[indice + 1].timestamp, taxa }))
+                    .slice(-MAX_PONTOS);
+            };
+            // Calcula cada direção separadamente; os horários das inserções podem diferir.
+            const downloads = calcularTaxasMbps(dados.historico['Rede Recebida'] || []);
+            const uploads = calcularTaxasMbps(dados.historico['Rede Enviada'] || []);
+            const horariosRede = [...new Set([
+                ...downloads.map(ponto => ponto.timestamp),
+                ...uploads.map(ponto => ponto.timestamp),
+            ])].sort();
+            const alinharTaxas = pontos => new Map(pontos.map(ponto => [ponto.timestamp, ponto.taxa]));
+            const mapaDownload = alinharTaxas(downloads);
+            const mapaUpload = alinharTaxas(uploads);
+            graficoRede.data.labels = horariosRede.map(horario => new Date(horario).toLocaleTimeString('pt-BR'));
+            graficoRede.data.datasets[0].data = horariosRede.map(horario => mapaDownload.get(horario) ?? null);
+            graficoRede.data.datasets[1].data = horariosRede.map(horario => mapaUpload.get(horario) ?? null);            graficoRede.update(reduzMovimento.matches ? 'none' : undefined);
+            texto('network-status', !recebidas.length || !enviadas.length
+                ? 'Sem capturas de rede para este servidor.'
+                : !downloads.length || !uploads.length
+                    ? 'Aguardando a segunda captura para calcular a velocidade.'
+                    : 'Velocidade em Mbps de recebimento e envio');
+
             renderizarKpis(dados.kpis || {});
 
             texto(
@@ -165,7 +225,7 @@ function idServidorAtual() { const n = parseInt(new URLSearchParams(window.locat
         clearTimeout(timer);
         if (document.hidden) {
             requisicao?.abort();
-            Object.values(graficos).forEach(grafico => grafico.stop());
+            [...Object.values(graficos), graficoRede].forEach(grafico => grafico.stop());
         } else {
             atualizarMetricas();
         }
