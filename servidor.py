@@ -24,7 +24,7 @@ CAMINHO_ENV = os.environ.get("ENV_PATH") or next(
     ),
     os.path.join(PASTA_ATUAL, ".env.dev"),
 )
-INTERVALO_GRAVACAO = 30
+INTERVALO_GRAVACAO = 15
 LIMITE_HISTORICO = 30
 LIMITE_ALERTAS = 50
 
