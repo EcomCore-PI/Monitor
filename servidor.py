@@ -5,7 +5,7 @@ import json
 import os
 import threading
 import time
-
+import urllib.request
 import mysql.connector
 import psutil
 
@@ -45,6 +45,7 @@ def carregar_env(caminho):
 
 
 ENV = carregar_env(CAMINHO_ENV)
+SLACK_WEBHOOK_URL=ENV.get("SLACK_WEBHOOK_URL")
 CONFIG_BANCO = {
     "host": ENV.get("DB_HOST"),
     "user": ENV.get("DB_USER"),
@@ -273,11 +274,28 @@ def calcular_nivel(valor, especificacao):
     return None
 
 
-# ---------------------------------------------------------------------------
-# Grava capturas e eventos de alerta conforme o modelo existente no SQL:
-# alerta(fk_captura, nivel, data), com nivel ATENCAO ou CRITICO.
-# Um evento é gravado ao entrar em alerta ou mudar de nível, não a cada coleta.
-# ---------------------------------------------------------------------------
+def enviar_slack(alerta):
+    if not SLACK_WEBHOOK_URL:
+        return
+
+    icone = "🔴" if alerta["nivel"] == "CRITICO" else "⚠️"
+    texto = (
+        f"{icone} *{alerta['nivel']}* no servidor {ID_SERVIDOR}: "
+        f"{alerta['tipo']} em {alerta['valor']:.1f}{alerta['unidade']} "
+        f"(limite de {alerta['nivel'].lower()}: {alerta['limite']:.1f}{alerta['unidade']})"
+    )
+
+    try:
+        pedido = urllib.request.Request(
+            SLACK_WEBHOOK_URL,
+            data=json.dumps({"text": texto}).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+        )
+        urllib.request.urlopen(pedido, timeout=5).close()
+    except Exception as erro:
+        print(f"[ERRO] Falha ao enviar alerta ao Slack: {erro}")
+
+
 def gravar_capturas(dados):
     conexao = mysql.connector.connect(**CONFIG_BANCO)
     cursor = None
@@ -292,6 +310,7 @@ def gravar_capturas(dados):
             raise ValueError(f"Servidor {ID_SERVIDOR} não cadastrado.")
 
         especificacoes = carregar_especificacoes(cursor)
+        alertas_novos = []
 
         for tipo, campo in RECURSOS.items():
             if tipo not in especificacoes:
@@ -340,10 +359,25 @@ def gravar_capturas(dados):
                     INSERT INTO alerta (fk_captura, nivel, data)
                     VALUES (%s, %s, NOW())
                     """,
+
+                    
                     (id_captura, nivel_atual),
                 )
 
+                alertas_novos.append({
+                    "tipo": tipo,
+                    "nivel": nivel_atual,
+                    "valor": float(valor),
+                    "unidade": especificacao["unidade"],
+                    "limite": (
+                        especificacao["limite_critico"]
+                        if nivel_atual == "CRITICO"
+                        else especificacao["limite_atencao"]
+                    ),
+                })
+
         conexao.commit()
+        return alertas_novos
 
     except Exception:
         conexao.rollback()
@@ -358,7 +392,9 @@ def loop_gravacao():
     while True:
         try:
             dados = coletar_dados()
-            gravar_capturas(dados)
+            alertas_novos = gravar_capturas(dados)
+            for alerta in alertas_novos:
+                enviar_slack(alerta)
             print(
                 f"[OK] CPU {dados['cpu_percent']:.1f}% | "
                 f"RAM {dados['memoria_percent']:.1f}% | "
