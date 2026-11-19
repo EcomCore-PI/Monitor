@@ -26,16 +26,16 @@
 
             <ul class="nav-menu">
                 <li class="nav-item" onclick="window.location.href='../../index.html'">
-                     <span>Dashboard</span>
+                    <span>Dashboard</span>
                 </li>
                 <li class="nav-item active" onclick="window.location.href='cpu.html'">
-                     <span>CPU (Marco)</span>
+                    <span>CPU (Marco)</span>
                 </li>
             </ul>
         </div>
         <div class="sidebar-actions">
             <a class="btn-support" href="https://magna-sync.atlassian.net/jira/software/projects/SCRUM/form/1?atlOrigin=eyJpIjoiNmY4MzZjZTk2MTY4NDk3Zjk1YzEwZmEwZWY2NGFkNjIiLCJwIjoiaiJ9">
-                 <span>Suporte</span>
+                <span>Suporte</span>
             </a>
             <button class="btn-logout" onclick="logout()">
                 <span>Sair</span>
@@ -45,7 +45,7 @@
 
     <main class="main-content">
         <header class="header">
-            <h2>Monitoramento de CPU · Servidor 6</h2>
+            <h2 id="tituloServidorCpu">Monitoramento de CPU · Servidor 6</h2>
             <p>Visão detalhada do processador e tempos de execução (psutil)</p>
         </header>
 
@@ -54,25 +54,25 @@
                 <p class="kpi-label">Uso Total de CPU</p>
                 <p class="kpi-value" id="kpiCpuTotal">--%</p>
                 <p class="kpi-description" id="kpiCpuStatus">Nível: --</p>
-                <p class="kpi-detail" id="kpiCpuPico">Pico em 24h: 94%</p>
+                <p class="kpi-detail" id="kpiCpuPico">User: --% · System: --%</p>
             </article>
             <article class="kpi-card">
                 <p class="kpi-label">Load Average (1 min)</p>
                 <p class="kpi-value" id="kpiLoad1Min">--</p>
-                <p class="kpi-description" id="kpiQtdNucleos">4 núcleos disponíveis</p>
-                <p class="kpi-detail">Chave: <span class="code-key">load_1min</span></p>
+                <p class="kpi-description" id="kpiQtdNucleos">-- núcleos disponíveis</p>
+                <p class="kpi-detail">Fila de execução do sistema</p>
             </article>
             <article class="kpi-card">
                 <p class="kpi-label">Steal Time</p>
                 <p class="kpi-value" id="kpiCpuSteal">--%</p>
                 <p class="kpi-description">Tempo cedido ao host</p>
-                <p class="kpi-detail">Chave: <span class="code-key">cpu_steal</span></p>
+                <p class="kpi-detail">Contenção de hipervisor</p>
             </article>
             <article class="kpi-card">
                 <p class="kpi-label">I/O Wait</p>
                 <p class="kpi-value" id="kpiCpuIowait">--%</p>
                 <p class="kpi-description">Espera por disco</p>
-                <p class="kpi-detail">Chave: <span class="code-key">cpu_iowait</span></p>
+                <p class="kpi-detail">Gargalo de entrada/saída</p>
             </article>
         </section>
 
@@ -83,7 +83,7 @@
                 <article class="card chart-card">
                     <header class="chart-heading">
                         <h3>Uso total de CPU</h3>
-                        <p>Últimos 30 minutos, com limite de atenção em 70%</p>
+                        <p>Histórico recente, com limite de atenção em 70%</p>
                     </header>
                     <div class="chart-container">
                         <canvas id="graficoCpuTotal" role="img" aria-label="Gráfico de uso total de CPU"></canvas>
@@ -93,7 +93,7 @@
                 <article class="card chart-card">
                     <header class="chart-heading">
                         <h3>Uso por núcleo</h3>
-                        <p>Distribuição individual (<span class="code-key">cpu_por_nucleo</span>)</p>
+                        <p>Distribuição individual dos núcleos lógicos</p>
                     </header>
                     <div class="chart-container">
                         <canvas id="graficoCpuNucleos" role="img" aria-label="Gráfico de uso por núcleo de CPU"></canvas>
@@ -101,104 +101,31 @@
                 </article>
             </section>
 
-            <div class="right-column-stack">
-                <section class="alerts-panel" aria-labelledby="novas-metricas-title">
-                    <header class="alerts-heading">
-                        <div>
-                            <h3 id="novas-metricas-title">Novas Métricas Coletadas</h3>
-                            <p>Detalhamento em tempo real via Python (<span class="code-key">psutil</span>)</p>
-                        </div>
-                        <span class="metric-tag">API</span>
-                    </header>
-
-                    <div class="alerts-table-wrapper table-spaced">
-                        <table class="alerts-table">
-                            <thead>
-                                <tr>
-                                    <th scope="col">Métrica</th>
-                                    <th scope="col">Chave JSON</th>
-                                    <th scope="col">Valor Atual</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tabelaNovasMetricas">
-                                <tr>
-                                    <td>CPU User</td>
-                                    <td><span class="code-key">cpu_user</span></td>
-                                    <td id="valCpuUser">--%</td>
-                                </tr>
-                                <tr>
-                                    <td>CPU System</td>
-                                    <td><span class="code-key">cpu_system</span></td>
-                                    <td id="valCpuSystem">--%</td>
-                                </tr>
-                                <tr>
-                                    <td>CPU I/O Wait</td>
-                                    <td><span class="code-key">cpu_iowait</span></td>
-                                    <td id="valCpuIowait">--%</td>
-                                </tr>
-                                <tr>
-                                    <td>CPU Steal</td>
-                                    <td><span class="code-key">cpu_steal</span></td>
-                                    <td id="valCpuSteal">--%</td>
-                                </tr>
-                                <tr>
-                                    <td>Load Average (1m)</td>
-                                    <td><span class="code-key">load_1min</span></td>
-                                    <td id="valLoad1Min">--</td>
-                                </tr>
-                                <tr>
-                                    <td>Uso por Núcleo</td>
-                                    <td><span class="code-key">cpu_por_nucleo</span></td>
-                                    <td id="valCpuNucleos">--</td>
-                                </tr>
-                            </tbody>
-                        </table>
+            <aside class="alerts-panel" aria-labelledby="alerts-cpu-title">
+                <header class="alerts-heading">
+                    <div>
+                        <h3 id="alerts-cpu-title">Alertas recentes</h3>
+                        <p>Últimos eventos de CPU</p>
                     </div>
-                </section>
-
-                <aside class="alerts-panel" aria-labelledby="alerts-cpu-title">
-                    <header class="alerts-heading">
-                        <div>
-                            <h3 id="alerts-cpu-title">Alertas recentes</h3>
-                            <p>Últimos eventos de CPU</p>
-                        </div>
-                        <span class="alerts-count" id="contadorAlertas">4</span>
-                    </header>
-                    <div class="alerts-table-wrapper table-spaced">
-                        <table class="alerts-table">
-                            <thead>
-                                <tr>
-                                    <th scope="col">Horário</th>
-                                    <th scope="col">Nível</th>
-                                    <th scope="col">Valor</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tabelaAlertasCpu">
-                                <tr>
-                                    <td>14:32:10</td>
-                                    <td><span class="alert-level alert-level--warning">ATENCAO</span></td>
-                                    <td>72%</td>
-                                </tr>
-                                <tr>
-                                    <td>13:58:45</td>
-                                    <td><span class="alert-level alert-level--critical">CRITICO</span></td>
-                                    <td>94%</td>
-                                </tr>
-                                <tr>
-                                    <td>13:51:02</td>
-                                    <td><span class="alert-level alert-level--warning">ATENCAO</span></td>
-                                    <td>76%</td>
-                                </tr>
-                                <tr>
-                                    <td>11:20:31</td>
-                                    <td><span class="alert-level alert-level--warning">ATENCAO</span></td>
-                                    <td>71%</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </aside>
-            </div>
+                    <span class="alerts-count" id="contadorAlertas">0</span>
+                </header>
+                <div class="alerts-table-wrapper table-spaced">
+                    <table class="alerts-table">
+                        <thead>
+                            <tr>
+                                <th scope="col">Horário</th>
+                                <th scope="col">Nível</th>
+                                <th scope="col">Valor</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabelaAlertasCpu">
+                            <tr>
+                                <td colspan="3">Carregando alertas de CPU...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </aside>
         </div>
     </main>
 
@@ -207,6 +134,12 @@
             const nomeSalvo = sessionStorage.getItem('NOME_USUARIO') || localStorage.getItem('NOME_USUARIO');
             if (nomeSalvo) {
                 document.getElementById('nomeAnalista').innerText = nomeSalvo;
+            }
+
+            const params = new URLSearchParams(window.location.search);
+            const idServidor = params.get('servidor') || params.get('id_servidor');
+            if (idServidor) {
+                document.getElementById('tituloServidorCpu').textContent = `Monitoramento de CPU · Servidor ${idServidor}`;
             }
         });
 

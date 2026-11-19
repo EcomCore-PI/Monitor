@@ -13,6 +13,12 @@ let graficoNucleos = null;
 const horariosHistorico = [];
 const historicoCpuTotal = [];
 
+function obterQueryServidor() {
+  const params = new URLSearchParams(window.location.search);
+  const idServidorUrl = params.get('servidor') || params.get('id_servidor');
+  return idServidorUrl ? `?id_servidor=${encodeURIComponent(idServidorUrl)}` : '';
+}
+
 function inicializarGraficos() {
   const opcoesBase = {
     responsive: true,
@@ -91,13 +97,13 @@ function atualizarInterfaceCpu(dados) {
   const load1Min = Number(dados.load_1min ?? 0);
   const nucleos = Array.isArray(dados.cpu_por_nucleo) ? dados.cpu_por_nucleo : [];
 
-  // Calcula o uso total a partir dos tempos da CPU (ou usa cpu_total se vier direto do banco)
   const usoTotal = dados.cpu_total !== undefined
     ? Number(dados.cpu_total)
     : Number((cpuUser + cpuSystem + cpuIowait + cpuSteal).toFixed(1));
 
   // Atualiza KPIs
   document.getElementById('kpiCpuTotal').textContent = `${usoTotal}%`;
+  document.getElementById('kpiCpuPico').textContent = `User: ${cpuUser}% · System: ${cpuSystem}%`;
   document.getElementById('kpiLoad1Min').textContent = load1Min.toFixed(2).replace('.', ',');
   document.getElementById('kpiCpuSteal').textContent = `${cpuSteal}%`;
   document.getElementById('kpiCpuIowait').textContent = `${cpuIowait}%`;
@@ -114,16 +120,6 @@ function atualizarInterfaceCpu(dados) {
     statusEl.textContent = 'Nível: Normal';
     statusEl.style.color = '#6ee7b7';
   }
-
-  // Atualiza Tabela de Novas Métricas
-  document.getElementById('valCpuUser').textContent = `${cpuUser}%`;
-  document.getElementById('valCpuSystem').textContent = `${cpuSystem}%`;
-  document.getElementById('valCpuIowait').textContent = `${cpuIowait}%`;
-  document.getElementById('valCpuSteal').textContent = `${cpuSteal}%`;
-  document.getElementById('valLoad1Min').textContent = load1Min.toFixed(2).replace('.', ',');
-  document.getElementById('valCpuNucleos').textContent = nucleos.length > 0
-    ? nucleos.map((v, i) => `N${i}: ${v}%`).join(' | ')
-    : '--';
 
   // Atualiza Gráfico de Linha (Uso Total)
   const horarioLeitura = dados.horario || new Date().toLocaleTimeString('pt-BR', {
@@ -161,8 +157,9 @@ async function buscarMetricasCpu() {
   const statusAtualizacao = document.getElementById('statusAtualizacao');
 
   try {
+    const query = obterQueryServidor();
     const baseUrl = typeof API_URL !== 'undefined' ? API_URL : '';
-    const resposta = await fetch(`${baseUrl}/metricas/cpu`);
+    const resposta = await fetch(`${baseUrl}/metricas/cpu${query}`);
 
     if (!resposta.ok) {
       throw new Error(`HTTP ${resposta.status}`);
@@ -170,12 +167,11 @@ async function buscarMetricasCpu() {
 
     const retorno = await resposta.json();
 
-    // Se o banco devolver uma lista de registros históricos, preenche o histórico e pega o mais recente
     if (Array.isArray(retorno) && retorno.length > 0) {
       horariosHistorico.length = 0;
       historicoCpuTotal.length = 0;
 
-      retorno.slice(-15).forEach(item => {
+      retorno.slice(-15, -1).forEach(item => {
         const totalItem = item.cpu_total !== undefined
           ? Number(item.cpu_total)
           : Number((Number(item.cpu_user ?? 0) + Number(item.cpu_system ?? 0) + Number(item.cpu_iowait ?? 0) + Number(item.cpu_steal ?? 0)).toFixed(1));
@@ -185,7 +181,7 @@ async function buscarMetricasCpu() {
       });
 
       atualizarInterfaceCpu(retorno[retorno.length - 1]);
-    } else if (retorno && typeof retorno === 'object') {
+    } else if (retorno && typeof retorno === 'object' && !Array.isArray(retorno)) {
       atualizarInterfaceCpu(retorno);
     }
   } catch (erro) {
@@ -195,8 +191,55 @@ async function buscarMetricasCpu() {
   }
 }
 
+async function buscarAlertasCpu() {
+  const tbody = document.getElementById('tabelaAlertasCpu');
+  const contador = document.getElementById('contadorAlertas');
+
+  try {
+    const query = obterQueryServidor();
+    const baseUrl = typeof API_URL !== 'undefined' ? API_URL : '';
+    const resposta = await fetch(`${baseUrl}/alertas${query}`);
+
+    if (!resposta.ok) {
+      throw new Error(`HTTP ${resposta.status}`);
+    }
+
+    const dados = await resposta.json();
+    const lista = Array.isArray(dados.alertas) ? dados.alertas : [];
+    const alertasCpu = lista.filter(a => String(a.recurso || '').toUpperCase().includes('CPU'));
+
+    contador.textContent = alertasCpu.length;
+
+    if (alertasCpu.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="3">Nenhum alerta recente de CPU.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = alertasCpu.slice(0, 15).map(alerta => {
+      const nivel = String(alerta.nivel || '').toUpperCase();
+      const classeNivel = nivel === 'CRITICO' ? 'alert-level--critical' : 'alert-level--warning';
+      const horario = alerta.horario_captura || alerta.data || '--:--';
+      const valor = Number(alerta.valor_medido ?? 0).toFixed(1);
+
+      return `
+        <tr>
+          <td>${horario}</td>
+          <td><span class="alert-level ${classeNivel}">${nivel}</span></td>
+          <td>${valor}%</td>
+        </tr>
+      `;
+    }).join('');
+  } catch (erro) {
+    console.error('Erro ao buscar alertas de CPU:', erro);
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   inicializarGraficos();
   buscarMetricasCpu();
-  setInterval(buscarMetricasCpu, 3000);
+  buscarAlertasCpu();
+  setInterval(() => {
+    buscarMetricasCpu();
+    buscarAlertasCpu();
+  }, 3000);
 });
