@@ -88,7 +88,7 @@ const graficoMemoria = new Chart(
 async function atualizar() {
 
     try {
-        const idServidor = window.CONFIG_SERVIDOR?.id || 2;
+        const idServidor = window.CONFIG_SERVIDOR?.id || 3;
         const resposta = await fetch(`/metricas/memoria?id_servidor=${idServidor}`);
 
         if (!resposta.ok) {
