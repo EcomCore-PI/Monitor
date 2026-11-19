@@ -255,6 +255,8 @@ def carregar_especificacoes(cursor):
     especificacoes = {}
     for linha in cursor.fetchall():
         tipo = linha["tipo"]
+        if tipo in especificacoes:
+            continue
         especificacoes[tipo] = {
             "id": linha["especificacao_id"],
             "metrica_id": linha["metrica_id"],
