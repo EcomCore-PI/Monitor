@@ -8,6 +8,7 @@ import time
 import urllib.request
 import mysql.connector
 import psutil
+from Individuais.Marco.monitor_cpu import gravar_metricas_cpu, buscar_metricas_cpu
 
 
 # ---------------------------------------------------------------------------
@@ -45,7 +46,7 @@ def carregar_env(caminho):
 
 
 ENV = carregar_env(CAMINHO_ENV)
-SLACK_WEBHOOK_URL=ENV.get("SLACK_WEBHOOK_URL")
+SLACK_WEBHOOK_URL = ENV.get("SLACK_WEBHOOK_URL")
 CONFIG_BANCO = {
     "host": ENV.get("DB_HOST"),
     "user": ENV.get("DB_USER"),
@@ -359,8 +360,6 @@ def gravar_capturas(dados):
                     INSERT INTO alerta (fk_captura, nivel, data)
                     VALUES (%s, %s, NOW())
                     """,
-
-                    
                     (id_captura, nivel_atual),
                 )
 
@@ -395,6 +394,10 @@ def loop_gravacao():
             alertas_novos = gravar_capturas(dados)
             for alerta in alertas_novos:
                 enviar_slack(alerta)
+
+            # Grava métricas detalhadas de CPU (Individuais/Marco)
+            gravar_metricas_cpu(CONFIG_BANCO, ID_SERVIDOR)
+
             print(
                 f"[OK] CPU {dados['cpu_percent']:.1f}% | "
                 f"RAM {dados['memoria_percent']:.1f}% | "
@@ -642,6 +645,18 @@ class Servidor(SimpleHTTPRequestHandler):
                 print(f"[ERRO] Consulta de alertas falhou: {erro}")
                 self.responder_json(
                     {"erro": "Não foi possível consultar alertas no banco."},
+                    503,
+                )
+            return
+
+        if caminho == "/metricas/cpu":
+            try:
+                dados_cpu = buscar_metricas_cpu(CONFIG_BANCO, id_servidor)
+                self.responder_json(dados_cpu or [])
+            except Exception as erro:
+                print(f"[ERRO] Consulta de métricas de CPU falhou: {erro}")
+                self.responder_json(
+                    {"erro": "Não foi possível consultar métricas de CPU no banco."},
                     503,
                 )
             return
