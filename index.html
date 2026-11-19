@@ -24,8 +24,11 @@
             </div>
 
             <ul class="nav-menu">
-                <li class="nav-item active">
+                <li class="nav-item active" onclick="window.location.href='index.html'">
                      <span>Dashboard</span>
+                </li>
+                <li class="nav-item" onclick="window.location.href='Individuais/Marco/cpu.html'">
+                     <span>CPU (Marco)</span>
                 </li>
             </ul>
         </div>
@@ -33,10 +36,10 @@
             <a class="btn-support" href="https://magna-sync.atlassian.net/jira/software/projects/SCRUM/form/1?atlOrigin=eyJpIjoiNmY4MzZjZTk2MTY4NDk3Zjk1YzEwZmEwZWY2NGFkNjIiLCJwIjoiaiJ9">
                  <span>Suporte</span>
             </a>
-        <button class="btn-logout" onclick="logout()">
+            <button class="btn-logout" onclick="logout()">
                 <span>Sair</span>
-        </button>
-	</div>
+            </button>
+        </div>
     </aside>
 
     <main class="main-content">
@@ -120,11 +123,3 @@
             localStorage.clear();
             window.history.back();
         }
-
-    
-    </script>
-    <script src="config.js"></script>
-    <script src="monitoramento-graficos.js"></script>
-</body>
-
-</html>

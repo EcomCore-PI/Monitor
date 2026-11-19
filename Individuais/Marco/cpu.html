@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcomCore - Monitoramento de CPU</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="../../imgs/favcore1.png">
+    <link rel="stylesheet" href="../../dashboard.css">
+    <link rel="stylesheet" href="cpu.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+
+    <aside class="sidebar">
+        <div>
+            <div class="brand">
+                <img src="../../imgs/EcomCoresemfundo.png" alt="Logo EcomCore" class="brand-logo">
+            </div>
+            <div class="user-profile">
+                <div class="welcome-text">Bem-vindo de volta,</div>
+                <div class="user-name" id="nomeAnalista">Marco Expedito</div>
+            </div>
+
+            <ul class="nav-menu">
+                <li class="nav-item" onclick="window.location.href='../../index.html'">
+                     <span>Dashboard</span>
+                </li>
+                <li class="nav-item active" onclick="window.location.href='cpu.html'">
+                     <span>CPU (Marco)</span>
+                </li>
+            </ul>
+        </div>
+        <div class="sidebar-actions">
+            <a class="btn-support" href="https://magna-sync.atlassian.net/jira/software/projects/SCRUM/form/1?atlOrigin=eyJpIjoiNmY4MzZjZTk2MTY4NDk3Zjk1YzEwZmEwZWY2NGFkNjIiLCJwIjoiaiJ9">
+                 <span>Suporte</span>
+            </a>
+            <button class="btn-logout" onclick="logout()">
+                <span>Sair</span>
+            </button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header class="header">
+            <h2>Monitoramento de CPU · Servidor 6</h2>
+            <p>Visão detalhada do processador e tempos de execução (psutil)</p>
+        </header>
+
+        <section class="kpi-grid" aria-label="Indicadores de CPU">
+            <article class="kpi-card">
+                <p class="kpi-label">Uso Total de CPU</p>
+                <p class="kpi-value" id="kpiCpuTotal">--%</p>
+                <p class="kpi-description" id="kpiCpuStatus">Nível: --</p>
+                <p class="kpi-detail" id="kpiCpuPico">Pico em 24h: 94%</p>
+            </article>
+            <article class="kpi-card">
+                <p class="kpi-label">Load Average (1 min)</p>
+                <p class="kpi-value" id="kpiLoad1Min">--</p>
+                <p class="kpi-description" id="kpiQtdNucleos">4 núcleos disponíveis</p>
+                <p class="kpi-detail">Chave: <span class="code-key">load_1min</span></p>
+            </article>
+            <article class="kpi-card">
+                <p class="kpi-label">Steal Time</p>
+                <p class="kpi-value" id="kpiCpuSteal">--%</p>
+                <p class="kpi-description">Tempo cedido ao host</p>
+                <p class="kpi-detail">Chave: <span class="code-key">cpu_steal</span></p>
+            </article>
+            <article class="kpi-card">
+                <p class="kpi-label">I/O Wait</p>
+                <p class="kpi-value" id="kpiCpuIowait">--%</p>
+                <p class="kpi-description">Espera por disco</p>
+                <p class="kpi-detail">Chave: <span class="code-key">cpu_iowait</span></p>
+            </article>
+        </section>
+
+        <p class="metrics-status" id="statusAtualizacao" role="status">Aguardando primeira leitura…</p>
+
+        <div class="monitoring-layout">
+            <section class="dashboard-grid-cpu" aria-label="Gráficos de CPU">
+                <article class="card chart-card">
+                    <header class="chart-heading">
+                        <h3>Uso total de CPU</h3>
+                        <p>Últimos 30 minutos, com limite de atenção em 70%</p>
+                    </header>
+                    <div class="chart-container">
+                        <canvas id="graficoCpuTotal" role="img" aria-label="Gráfico de uso total de CPU"></canvas>
+                    </div>
+                </article>
+
+                <article class="card chart-card">
+                    <header class="chart-heading">
+                        <h3>Uso por núcleo</h3>
+                        <p>Distribuição individual (<span class="code-key">cpu_por_nucleo</span>)</p>
+                    </header>
+                    <div class="chart-container">
+                        <canvas id="graficoCpuNucleos" role="img" aria-label="Gráfico de uso por núcleo de CPU"></canvas>
+                    </div>
+                </article>
+            </section>
+
+            <div class="right-column-stack">
+                <section class="alerts-panel" aria-labelledby="novas-metricas-title">
+                    <header class="alerts-heading">
+                        <div>
+                            <h3 id="novas-metricas-title">Novas Métricas Coletadas</h3>
+                            <p>Detalhamento em tempo real via Python (<span class="code-key">psutil</span>)</p>
+                        </div>
+                        <span class="metric-tag">API</span>
+                    </header>
+
+                    <div class="alerts-table-wrapper table-spaced">
+                        <table class="alerts-table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Métrica</th>
+                                    <th scope="col">Chave JSON</th>
+                                    <th scope="col">Valor Atual</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabelaNovasMetricas">
+                                <tr>
+                                    <td>CPU User</td>
+                                    <td><span class="code-key">cpu_user</span></td>
+                                    <td id="valCpuUser">--%</td>
+                                </tr>
+                                <tr>
+                                    <td>CPU System</td>
+                                    <td><span class="code-key">cpu_system</span></td>
+                                    <td id="valCpuSystem">--%</td>
+                                </tr>
+                                <tr>
+                                    <td>CPU I/O Wait</td>
+                                    <td><span class="code-key">cpu_iowait</span></td>
+                                    <td id="valCpuIowait">--%</td>
+                                </tr>
+                                <tr>
+                                    <td>CPU Steal</td>
+                                    <td><span class="code-key">cpu_steal</span></td>
+                                    <td id="valCpuSteal">--%</td>
+                                </tr>
+                                <tr>
+                                    <td>Load Average (1m)</td>
+                                    <td><span class="code-key">load_1min</span></td>
+                                    <td id="valLoad1Min">--</td>
+                                </tr>
+                                <tr>
+                                    <td>Uso por Núcleo</td>
+                                    <td><span class="code-key">cpu_por_nucleo</span></td>
+                                    <td id="valCpuNucleos">--</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <aside class="alerts-panel" aria-labelledby="alerts-cpu-title">
+                    <header class="alerts-heading">
+                        <div>
+                            <h3 id="alerts-cpu-title">Alertas recentes</h3>
+                            <p>Últimos eventos de CPU</p>
+                        </div>
+                        <span class="alerts-count" id="contadorAlertas">4</span>
+                    </header>
+                    <div class="alerts-table-wrapper table-spaced">
+                        <table class="alerts-table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Horário</th>
+                                    <th scope="col">Nível</th>
+                                    <th scope="col">Valor</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabelaAlertasCpu">
+                                <tr>
+                                    <td>14:32:10</td>
+                                    <td><span class="alert-level alert-level--warning">ATENCAO</span></td>
+                                    <td>72%</td>
+                                </tr>
+                                <tr>
+                                    <td>13:58:45</td>
+                                    <td><span class="alert-level alert-level--critical">CRITICO</span></td>
+                                    <td>94%</td>
+                                </tr>
+                                <tr>
+                                    <td>13:51:02</td>
+                                    <td><span class="alert-level alert-level--warning">ATENCAO</span></td>
+                                    <td>76%</td>
+                                </tr>
+                                <tr>
+                                    <td>11:20:31</td>
+                                    <td><span class="alert-level alert-level--warning">ATENCAO</span></td>
+                                    <td>71%</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </aside>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const nomeSalvo = sessionStorage.getItem('NOME_USUARIO') || localStorage.getItem('NOME_USUARIO');
+            if (nomeSalvo) {
+                document.getElementById('nomeAnalista').innerText = nomeSalvo;
+            }
+        });
+
+        function logout() {
+            sessionStorage.clear();
+            localStorage.clear();
+            window.history.back();
+        }
+    </script>
+    <script src="../../config.js"></script>
+    <script src="cpu.js"></script>
+</body>
+
+</html>
