@@ -6,9 +6,13 @@ import os
 import threading
 import time
 import urllib.request
+from importlib import import_module
 import mysql.connector
 import psutil
 from Individuais.Marco.monitor_cpu import gravar_metricas_cpu, buscar_metricas_cpu
+
+monitor_memoria = import_module("Individuais.João-Miguel.monitor_memoria")
+monitor_disco = import_module("Individuais.Ana-Clara.monitor_disco")
 
 
 # ---------------------------------------------------------------------------
@@ -397,6 +401,8 @@ def loop_gravacao():
 
             # Grava métricas detalhadas de CPU (Individuais/Marco)
             gravar_metricas_cpu(CONFIG_BANCO, ID_SERVIDOR)
+            monitor_memoria.gravar_metricas_memoria(CONFIG_BANCO, ID_SERVIDOR)
+            monitor_disco.gravar_metricas_disco(CONFIG_BANCO, ID_SERVIDOR)
 
             print(
                 f"[OK] CPU {dados['cpu_percent']:.1f}% | "
@@ -661,6 +667,34 @@ class Servidor(SimpleHTTPRequestHandler):
                 )
             return
 
+        if caminho == "/metricas/memoria":
+            try:
+                dados_memoria = monitor_memoria.buscar_metricas_memoria(
+                    CONFIG_BANCO, id_servidor
+                )
+                self.responder_json(dados_memoria or [])
+            except Exception as erro:
+                print(f"[ERRO] Consulta de métricas de memória falhou: {erro}")
+                self.responder_json(
+                    {"erro": "Não foi possível consultar métricas de memória no banco."},
+                    503,
+                )
+            return
+
+        if caminho == "/metricas/disco":
+            try:
+                dados_disco = monitor_disco.buscar_metricas_disco(
+                    CONFIG_BANCO, id_servidor
+                )
+                self.responder_json(dados_disco or [])
+            except Exception as erro:
+                print(f"[ERRO] Consulta de métricas de disco falhou: {erro}")
+                self.responder_json(
+                    {"erro": "Não foi possível consultar métricas de disco no banco."},
+                    503,
+                )
+            return
+
         super().do_GET()
 
 
@@ -670,6 +704,8 @@ if __name__ == "__main__":
         f"{CONFIG_BANCO['database']}"
     )
     preparar_especificacoes()
+    monitor_memoria.preparar_especificacoes_memoria(CONFIG_BANCO, ID_SERVIDOR)
+    monitor_disco.preparar_especificacoes_disco(CONFIG_BANCO, ID_SERVIDOR)
     threading.Thread(target=loop_gravacao, daemon=True).start()
     servidor = ThreadingHTTPServer(("0.0.0.0", 8000), Servidor)
     print("Dashboard e API disponíveis na porta 8000.")
