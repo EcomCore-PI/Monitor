@@ -1,0 +1,1 @@
+# Pacote das dashboards e coletas individuais do grupo EcomCore
