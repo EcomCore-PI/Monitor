@@ -1,4 +1,160 @@
 <!DOCTYPE html>
-<html lang="pt-br"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>EcomCore - Monitoramento de Rede</title><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"><link rel="icon" href="../../imgs/favcore1.png"><link rel="stylesheet" href="../../dashboard.css"><link rel="stylesheet" href="../Marco/cpu.css"><script src="https://cdn.jsdelivr.net/npm/chart.js"></script></head>
-<body><aside class="sidebar"><div><div class="brand"><img src="../../imgs/EcomCoresemfundo.png" alt="Logo EcomCore" class="brand-logo"></div><div class="user-profile"><div class="welcome-text">Bem-vindo de volta,</div><div class="user-name">Matheus</div></div><ul class="nav-menu"><li class="nav-item" onclick="location.href='../../index.html'"><span>Dashboard</span></li><li class="nav-item" onclick="location.href='../Marco/cpu.html'"><span>CPU (Marco)</span></li><li class="nav-item" onclick="location.href='../Jo%C3%A3o-Miguel/memoria.html'"><span>Memória RAM (João Miguel)</span></li><li class="nav-item" onclick="location.href='../Ana-Clara/disco.html'"><span>Disco (Ana-Clara)</span></li><li class="nav-item active" onclick="location.href='../Matheus/rede.html'"><span>Rede (Matheus)</span></li><li class="nav-item" onclick="location.href='../Isabelle/financeiro.html'"><span>Financeiro (Isabelle)</span></li></ul></div><div class="sidebar-actions"><a class="btn-support" href="https://magna-sync.atlassian.net/jira/software/projects/SCRUM/form/1?atlOrigin=eyJpIjoiNmY4MzZjZTk2MTY4NDk3Zjk1YzEwZmEwZWY2NGFkNjIiLCJwIjoiaiJ9"><span>Suporte</span></a><button class="btn-logout" onclick="sessionStorage.clear();localStorage.clear();history.back()"><span>Sair</span></button></div></aside>
-<main class="main-content"><header class="header"><h2>Monitoramento de Rede · Servidor 1</h2><p>Tráfego de entrada e saída coletado pelo agente Java</p></header><section class="kpi-grid"><article class="kpi-card"><p class="kpi-label">Download</p><p class="kpi-value" id="download">-- Mbps</p><p class="kpi-description">Taxa atual de entrada</p></article><article class="kpi-card"><p class="kpi-label">Upload</p><p class="kpi-value" id="upload">-- Mbps</p><p class="kpi-description">Taxa atual de saída</p></article><article class="kpi-card"><p class="kpi-label">Bytes recebidos</p><p class="kpi-value" id="recebidos">-- GB</p><p class="kpi-description">Total desde a inicialização</p></article><article class="kpi-card"><p class="kpi-label">Bytes enviados</p><p class="kpi-value" id="enviados">-- GB</p><p class="kpi-description">Total desde a inicialização</p></article></section><p class="metrics-status" id="status">Aguardando primeira leitura…</p><div class="monitoring-layout"><section class="dashboard-grid-cpu"><article class="card chart-card"><header class="chart-heading"><h3>Tráfego de rede</h3><p>Download e upload em Mbps</p></header><div class="chart-container"><canvas id="grafico"></canvas></div></article></section><div class="right-column-stack"><section class="alerts-panel"><header class="alerts-heading"><div><h3>Métricas coletadas</h3><p>Agente Java (NetworkMonitor.java)</p></div><span class="metric-tag">API</span></header><div class="alerts-table-wrapper table-spaced"><table class="alerts-table"><thead><tr><th>Métrica</th><th>Chave JSON</th><th>Valor atual</th></tr></thead><tbody><tr><td>Download</td><td><span class="code-key">download_mbps</span></td><td id="mDownload">--</td></tr><tr><td>Upload</td><td><span class="code-key">upload_mbps</span></td><td id="mUpload">--</td></tr><tr><td>Recebidos acumulados</td><td><span class="code-key">bytes_recebidos</span></td><td id="mRecebidos">--</td></tr><tr><td>Enviados acumulados</td><td><span class="code-key">bytes_enviados</span></td><td id="mEnviados">--</td></tr></tbody></table></div></section><section class="alerts-panel"><header class="alerts-heading"><div><h3>Alertas recentes</h3><p>Eventos detectados durante o monitoramento</p></div><span class="alerts-count" id="alertCount">0</span></header><div class="alerts-table-wrapper table-spaced"><table class="alerts-table"><thead><tr><th>Horário</th><th>Nível</th><th>Valor</th></tr></thead><tbody id="recentAlerts"><tr><td colspan="3">Nenhum alerta recente</td></tr></tbody></table></div></section></div></div></main><script src="../../config.js"></script><script src="rede.js"></script><script src="../alertas.js"></script></body></html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcomCore - Monitoramento de Rede</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="../../imgs/favcore1.png">
+    <link rel="stylesheet" href="../../dashboard.css">
+    <link rel="stylesheet" href="rede.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+
+    <aside class="sidebar">
+        <div>
+            <div class="brand">
+                <img src="../../imgs/EcomCoresemfundo.png" alt="Logo EcomCore" class="brand-logo">
+            </div>
+            <div class="user-profile">
+                <div class="welcome-text">Bem-vindo de volta,</div>
+                <div class="user-name" id="nomeAnalista">Matheus Gonçalves</div>
+            </div>
+
+            <ul class="nav-menu">
+                <li class="nav-item" onclick="window.location.href='../../index.html'">
+                    <span>Dashboard</span>
+                </li>
+                <li class="nav-item" onclick="window.location.href='../Marco/cpu.html'">
+                    <span>CPU (Marco)</span>
+                </li>
+                <li class="nav-item" onclick="window.location.href='../Jo%C3%A3o-Miguel/memoria.html'"><span>Memória RAM (João Miguel)</span></li>
+                <li class="nav-item" onclick="window.location.href='../Ana-Clara/disco.html'"><span>Disco (Ana-Clara)</span></li>
+                <li class="nav-item active" onclick="window.location.href='rede.html'"><span>Rede (Matheus)</span></li>
+                <li class="nav-item" onclick="window.location.href='../Isabelle/financeiro.html'"><span>Financeiro (Isabelle)</span></li>
+            </ul>
+        </div>
+        <div class="sidebar-actions">
+            <a class="btn-support" href="https://magna-sync.atlassian.net/jira/software/projects/SCRUM/form/1?atlOrigin=eyJpIjoiNmY4MzZjZTk2MTY4NDk3Zjk1YzEwZmEwZWY2NGFkNjIiLCJwIjoiaiJ9">
+                <span>Suporte</span>
+            </a>
+            <button class="btn-logout" onclick="logout()">
+                <span>Sair</span>
+            </button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header class="header">
+            <h2 id="tituloServidorRede">Monitoramento de Rede</h2>
+            <p>Visão detalhada do tráfego e da disponibilidade da conexão do servidor</p>
+        </header>
+
+        <section class="kpi-grid" aria-label="Indicadores de rede">
+            <article class="kpi-card">
+                <p class="kpi-label">Download</p>
+                <p class="kpi-value"><span id="kpiDownload">--</span> <span class="kpi-unit">Mbps</span></p>
+                <p class="kpi-description">Recebimento no servidor</p>
+                <p class="kpi-detail">Tráfego recebido por segundo</p>
+            </article>
+            <article class="kpi-card">
+                <p class="kpi-label">Upload</p>
+                <p class="kpi-value"><span id="kpiUpload">--</span> <span class="kpi-unit">Mbps</span></p>
+                <p class="kpi-description">Envio pelo servidor</p>
+                <p class="kpi-detail">Tráfego enviado por segundo</p>
+            </article>
+            <article class="kpi-card">
+                <p class="kpi-label">Latência</p>
+                <p class="kpi-value"><span id="kpiLatencia">--</span> <span class="kpi-unit">ms</span></p>
+                <p class="kpi-description">Último teste de ping</p>
+                <p class="kpi-detail" id="kpiLatenciaDestino">Destino configurado para o monitor</p>
+            </article>
+            <article class="kpi-card">
+                <p class="kpi-label">Perda de pacotes</p>
+                <p class="kpi-value"><span id="kpiPerda">--</span> <span class="kpi-unit">%</span></p>
+                <p class="kpi-description">Últimos 20 testes de ping</p>
+                <p class="kpi-detail">Atualizada a cada 5 segundos</p>
+            </article>
+        </section>
+
+        <p class="metrics-status" id="statusRede" role="status">
+            <span class="estado-conexao" id="estadoConexao">
+                <span class="estado-dot" aria-hidden="true"></span>
+                <span id="estadoTexto">Aguardando…</span>
+            </span>
+            <span class="estado-separador">·</span>
+            <span id="statusAtualizacao">Aguardando primeira leitura…</span>
+        </p>
+
+        <div class="monitoring-layout">
+            <section class="dashboard-grid-rede" aria-label="Gráficos de rede">
+                <article class="card chart-card">
+                    <header class="chart-heading">
+                        <h3>Erros, descartes e colisões</h3>
+                        <p>Variação dos contadores da interface a cada coleta</p>
+                    </header>
+                    <div class="chart-container">
+                        <canvas id="graficoErros" role="img" aria-label="Erros, descartes e colisões de rede ao longo do tempo"></canvas>
+                    </div>
+                </article>
+
+                <article class="card chart-card">
+                    <header class="chart-heading">
+                        <h3>Disponibilidade da conexão</h3>
+                        <p>Percentual de testes de ping bem-sucedidos</p>
+                    </header>
+                    <div class="chart-container">
+                        <canvas id="graficoDisponibilidade" role="img" aria-label="Disponibilidade da conexão de rede ao longo do tempo"></canvas>
+                    </div>
+                </article>
+            </section>
+
+            <aside class="alerts-panel" aria-labelledby="alerts-rede-title">
+                <header class="alerts-heading">
+                    <div>
+                        <h3 id="alerts-rede-title">Alertas recentes</h3>
+                        <p>Eventos de conexão detectados nesta sessão</p>
+                    </div>
+                    <span class="alerts-count" id="contadorAlertas">0</span>
+                </header>
+                <div class="alerts-table-wrapper table-spaced">
+                    <table class="alerts-table">
+                        <thead>
+                            <tr>
+                                <th scope="col">Horário</th>
+                                <th scope="col">Evento</th>
+                                <th scope="col">Nível</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabelaAlertasRede">
+                            <tr>
+                                <td colspan="3" class="alerts-empty">Nenhum alerta observado.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </aside>
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const nomeSalvo = sessionStorage.getItem('NOME_USUARIO') || localStorage.getItem('NOME_USUARIO');
+            if (nomeSalvo) {
+                document.getElementById('nomeAnalista').innerText = nomeSalvo;
+            }
+        });
+
+        function logout() {
+            sessionStorage.clear();
+            localStorage.clear();
+            window.history.back();
+        }
+    </script>
+    <script src="rede.js"></script>
+</body>
+
+</html>

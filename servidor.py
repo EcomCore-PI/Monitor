@@ -5,6 +5,7 @@ import json
 import os
 import threading
 import time
+import subprocess
 import urllib.request
 from importlib import import_module
 import mysql.connector
@@ -13,6 +14,7 @@ from Individuais.Marco.monitor_cpu import gravar_metricas_cpu, buscar_metricas_c
 
 monitor_memoria = import_module("Individuais.João-Miguel.monitor_memoria")
 monitor_disco = import_module("Individuais.Ana-Clara.monitor_disco")
+monitor_rede = import_module("Individuais.Matheus.monitor_rede")
 
 
 # ---------------------------------------------------------------------------
@@ -88,15 +90,25 @@ def coletar_dados():
     memoria = psutil.virtual_memory()
     caminho_disco = os.path.abspath(os.sep)
     disco = psutil.disk_usage(caminho_disco)
-    rede = psutil.net_io_counters()
+    caminho_java = os.environ.get("NETWORK_MONITOR_CLASS_PATH")
+    if caminho_java:
+        comando_java = ["java", "-cp", caminho_java, "NetworkMonitor"]
+    else:
+        caminho_fonte = os.path.join(PASTA_ATUAL, "Individuais", "Matheus", "NetworkMonitor.java")
+        comando_java = ["java", caminho_fonte]
+    processo = subprocess.run(
+        comando_java, capture_output=True, text=True, check=True, timeout=20
+    )
+    rede = json.loads(processo.stdout.strip().splitlines()[-1])
 
     return {
         "cpu_percent": float(cpu_percent),
         "memoria_percent": float(memoria.percent),
         "disco_percent": float(disco.percent),
-        # Contadores acumulados em MiB; a velocidade é calculada entre capturas.
-        "rede_recebida_mib": rede.bytes_recv / (1024 ** 2),
-        "rede_enviada_mib": rede.bytes_sent / (1024 ** 2),
+        # Contadores de rede coletados pelo NetworkMonitor.java nesta instância.
+        "rede_recebida_mib": rede["bytes_recebidos"] / (1024 ** 2),
+        "rede_enviada_mib": rede["bytes_enviados"] / (1024 ** 2),
+        "metricas_rede": rede,
     }
 
 
@@ -406,6 +418,9 @@ def loop_gravacao():
             gravar_metricas_cpu(CONFIG_BANCO, ID_SERVIDOR)
             monitor_memoria.gravar_metricas_memoria(CONFIG_BANCO, ID_SERVIDOR)
             monitor_disco.gravar_metricas_disco(CONFIG_BANCO, ID_SERVIDOR)
+            monitor_rede.gravar_metricas_rede(
+                CONFIG_BANCO, ID_SERVIDOR, dados["metricas_rede"]
+            )
 
             print(
                 f"[OK] CPU {dados['cpu_percent']:.1f}% | "
@@ -698,6 +713,18 @@ class Servidor(SimpleHTTPRequestHandler):
                 )
             return
 
+        if caminho == "/metricas/rede":
+            try:
+                dados_rede = monitor_rede.buscar_metricas_rede(CONFIG_BANCO, id_servidor)
+                self.responder_json(dados_rede or [])
+            except Exception as erro:
+                print(f"[ERRO] Consulta de métricas de rede falhou: {erro}")
+                self.responder_json(
+                    {"erro": "Não foi possível consultar métricas de rede no banco."},
+                    503,
+                )
+            return
+
         super().do_GET()
 
 
@@ -710,6 +737,7 @@ if __name__ == "__main__":
         preparar_especificacoes()
         monitor_memoria.preparar_especificacoes_memoria(CONFIG_BANCO, ID_SERVIDOR)
         monitor_disco.preparar_especificacoes_disco(CONFIG_BANCO, ID_SERVIDOR)
+        monitor_rede.preparar_especificacoes_rede(CONFIG_BANCO, ID_SERVIDOR)
         threading.Thread(target=loop_gravacao, daemon=True).start()
     else:
         print("Coleta desativada nesta instância (COLETAR_METRICAS=false).")
