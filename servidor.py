@@ -135,7 +135,8 @@ def preparar_especificacoes():
             )
 
         # CPU, RAM e Disco usam os componentes e métricas já definidos pelo projeto.
-        for tipo in RECURSOS_OBRIGATORIOS:
+        # RAM e Disco recebem especificações próprias dos coletores individuais.
+        for tipo in ("CPU",):
             cursor.execute(
                 """
                 SELECT c.id AS componente_id
@@ -265,7 +266,13 @@ def carregar_especificacoes(cursor):
         WHERE et.fk_servidor = %s
           AND et.ativo = 1
           AND tc.nome IN ('CPU', 'RAM', 'Disco', 'Rede Recebida', 'Rede Enviada')
-        ORDER BY et.id
+        ORDER BY
+            CASE
+                WHEN tc.nome = 'RAM' AND c.descricao = 'Uso de RAM (%)' THEN 0
+                WHEN tc.nome = 'Disco' AND c.descricao = 'Uso de disco (%)' THEN 0
+                ELSE 1
+            END,
+            et.id
         """,
         (ID_SERVIDOR,),
     )
@@ -526,11 +533,11 @@ def buscar_alertas(id_servidor=ID_SERVIDOR, recurso=None):
             JOIN tipo_componente tc ON tc.id = c.fk_tipo_componente
             JOIN metrica m ON m.id = et.fk_metrica
             WHERE s.id = %s
-              AND (%s IS NULL OR tc.nome = %s)
+              AND (%s IS NULL OR tc.nome LIKE %s)
             ORDER BY a.data DESC, a.id DESC
             LIMIT %s
             """,
-            (id_servidor, recurso, recurso, LIMITE_ALERTAS),
+            (id_servidor, recurso, f"{recurso}%" if recurso == "Rede" else recurso, LIMITE_ALERTAS),
         )
 
         alertas = []
@@ -763,9 +770,9 @@ if __name__ == "__main__":
         f"{CONFIG_BANCO['database']}"
     )
     if COLETAR:
-        preparar_especificacoes()
         monitor_memoria.preparar_especificacoes_memoria(CONFIG_BANCO, ID_SERVIDOR)
         monitor_disco.preparar_especificacoes_disco(CONFIG_BANCO, ID_SERVIDOR)
+        preparar_especificacoes()
         monitor_rede.preparar_especificacoes_rede(CONFIG_BANCO, ID_SERVIDOR)
         threading.Thread(target=loop_gravacao, daemon=True).start()
         threading.Thread(target=loop_gravacao_rede, daemon=True).start()

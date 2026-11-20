@@ -181,9 +181,10 @@ def gravar_metricas_rede(config_banco, id_servidor, dados):
                 continue
             cursor.execute(
                 """
-                SELECT et.id
+                SELECT et.id, m.limite_atencao, m.limite_critico
                 FROM especificacao_tecnica et
                 JOIN componente c ON c.id = et.fk_componente
+                JOIN metrica m ON m.id = et.fk_metrica
                 WHERE et.fk_servidor = %s AND et.ativo = 1 AND c.descricao = %s
                 LIMIT 1
                 """,
@@ -193,9 +194,31 @@ def gravar_metricas_rede(config_banco, id_servidor, dados):
             if especificacao is None:
                 continue
             cursor.execute(
+                "SELECT valor FROM captura WHERE fk_especificacao_tecnica = %s ORDER BY horario DESC, id DESC LIMIT 1",
+                (especificacao["id"],),
+            )
+            leitura_anterior = cursor.fetchone()
+            limite_atencao = float(especificacao["limite_atencao"] or 0)
+            limite_critico = float(especificacao["limite_critico"] or 0)
+
+            def nivel(valor_atual):
+                if limite_critico > 0 and valor_atual >= limite_critico:
+                    return "CRITICO"
+                if limite_atencao > 0 and valor_atual >= limite_atencao:
+                    return "ATENCAO"
+                return None
+
+            nivel_anterior = nivel(float(leitura_anterior["valor"])) if leitura_anterior else None
+            cursor.execute(
                 "INSERT INTO captura (valor, horario, fk_especificacao_tecnica) VALUES (%s, @horario_coleta_rede, %s)",
                 (float(valor), especificacao["id"]),
             )
+            nivel_atual = nivel(float(valor))
+            if nivel_atual is not None and nivel_atual != nivel_anterior:
+                cursor.execute(
+                    "INSERT INTO alerta (fk_captura, nivel, data) VALUES (%s, %s, @horario_coleta_rede)",
+                    (cursor.lastrowid, nivel_atual),
+                )
         conexao.commit()
     except Exception:
         conexao.rollback()
