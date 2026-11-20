@@ -57,7 +57,7 @@
 
         async function atualizar() {
             try {
-                const idServidor = window.CONFIG_SERVIDOR?.id || 2;
+                const idServidor = window.CONFIG_SERVIDOR?.id;
                 const response = await fetch(`/metricas/disco?id_servidor=${idServidor}`);
                 if (!response.ok) throw new Error(`HTTP ${response.status} ao consultar /metricas/disco`);
                 const retorno = await response.json();
