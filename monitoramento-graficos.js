@@ -1,4 +1,11 @@
-function idServidorAtual() { const n = parseInt(new URLSearchParams(window.location.search).get("servidor"), 10); return n > 0 ? n : 2; }
+function idServidorAtual() {
+    const n = parseInt(new URLSearchParams(window.location.search).get("servidor"), 10);
+    if (n > 0) {
+        sessionStorage.setItem("SERVIDOR_LOGIN", n);
+        return n;
+    }
+    return parseInt(sessionStorage.getItem("SERVIDOR_LOGIN"), 10) || 6;
+}
 (() => {
     const status = document.getElementById('metrics-status');
     if (typeof Chart === 'undefined') {
