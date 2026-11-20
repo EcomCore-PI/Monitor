@@ -14,10 +14,11 @@ window.CONFIG_SERVIDOR = {
     id: idAtivo
 };
 
-// Mantém ?servidor=X visível na URL atual e em todos os links internos de navegação
+// Mantém ?servidor=X visível na URL atual e força esse ID em TODOS os links internos
 if (idAtivo) {
-    if (!parametros.has('servidor')) {
+    if (parametros.get('servidor') !== String(idAtivo)) {
         parametros.set('servidor', idAtivo);
+        parametros.delete('id_servidor');
         const novaUrl = `${window.location.pathname}?${parametros.toString()}${window.location.hash}`;
         window.history.replaceState({}, '', novaUrl);
     }
@@ -30,10 +31,10 @@ if (idAtivo) {
             }
 
             const url = new URL(href, window.location.href);
-            if (!url.searchParams.has('servidor')) {
-                url.searchParams.set('servidor', idAtivo);
-                link.setAttribute('href', url.pathname + url.search + url.hash);
-            }
+            // Sobrescreve mesmo que o HTML tenha ?servidor=6 hardcoded
+            url.searchParams.set('servidor', idAtivo);
+            url.searchParams.delete('id_servidor');
+            link.setAttribute('href', url.pathname + url.search + url.hash);
         });
     });
 }
