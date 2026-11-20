@@ -1,4 +1,180 @@
 <!DOCTYPE html>
-<html lang="pt-br"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>EcomCore - Monitoramento de Disco</title><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"><link rel="icon" href="../../imgs/favcore1.png"><link rel="stylesheet" href="../../dashboard.css"><link rel="stylesheet" href="../Marco/cpu.css"><script src="https://cdn.jsdelivr.net/npm/chart.js"></script></head>
-<body><aside class="sidebar"><div><div class="brand"><img src="../../imgs/EcomCoresemfundo.png" alt="Logo EcomCore" class="brand-logo"></div><div class="user-profile"><div class="welcome-text">Bem-vindo de volta,</div><div class="user-name">Ana-Clara</div></div><ul class="nav-menu"><li class="nav-item" onclick="location.href='../../index.html'"><span>Dashboard</span></li><li class="nav-item" onclick="location.href='../Marco/cpu.html'"><span>CPU (Marco)</span></li><li class="nav-item" onclick="location.href='../Jo%C3%A3o-Miguel/memoria.html'"><span>Memória RAM (João Miguel)</span></li><li class="nav-item active" onclick="location.href='../Ana-Clara/disco.html'"><span>Disco (Ana-Clara)</span></li><li class="nav-item" onclick="location.href='../Matheus/rede.html'"><span>Rede (Matheus)</span></li><li class="nav-item" onclick="location.href='../Isabelle/financeiro.html'"><span>Financeiro (Isabelle)</span></li></ul></div><div class="sidebar-actions"><a class="btn-support" href="https://magna-sync.atlassian.net/jira/software/projects/SCRUM/form/1?atlOrigin=eyJpIjoiNmY4MzZjZTk2MTY4NDk3Zjk1YzEwZmEwZWY2NGFkNjIiLCJwIjoiaiJ9"><span>Suporte</span></a><button class="btn-logout" onclick="sessionStorage.clear();localStorage.clear();history.back()"><span>Sair</span></button></div></aside>
-<main class="main-content"><header class="header"><h2>Monitoramento de Disco · Servidor 4</h2><p>Visão detalhada do espaço e da atividade de armazenamento (psutil)</p></header><section class="kpi-grid"><article class="kpi-card"><p class="kpi-label">Espaço usado</p><p class="kpi-value" id="usado">-- GB</p><p class="kpi-description" id="estado">Nível: --</p></article><article class="kpi-card"><p class="kpi-label">Espaço livre</p><p class="kpi-value" id="livre">-- GB</p><p class="kpi-description">Disponível no volume monitorado</p></article><article class="kpi-card"><p class="kpi-label">Capacidade</p><p class="kpi-value" id="total">-- GB</p><p class="kpi-description">Tamanho total do volume</p></article><article class="kpi-card"><p class="kpi-label">Uso do disco</p><p class="kpi-value" id="percentual">--%</p><p class="kpi-description">Percentual ocupado</p></article></section><p class="metrics-status" id="status">Aguardando primeira leitura…</p><div class="monitoring-layout"><section class="dashboard-grid-cpu"><article class="card chart-card"><header class="chart-heading"><h3>Ocupação do disco</h3><p>Histórico das últimas leituras</p></header><div class="chart-container"><canvas id="grafico"></canvas></div></article></section><div class="right-column-stack"><section class="alerts-panel"><header class="alerts-heading"><div><h3>Métricas coletadas</h3><p>Detalhamento em tempo real via Python (psutil)</p></div><span class="metric-tag">API</span></header><div class="alerts-table-wrapper table-spaced"><table class="alerts-table"><thead><tr><th>Métrica</th><th>Chave JSON</th><th>Valor atual</th></tr></thead><tbody><tr><td>Espaço usado</td><td><span class="code-key">disco_usado_gb</span></td><td id="mUsado">--</td></tr><tr><td>Espaço livre</td><td><span class="code-key">disco_livre_gb</span></td><td id="mLivre">--</td></tr><tr><td>Uso percentual</td><td><span class="code-key">disco_percentual</span></td><td id="mPercent">--</td></tr><tr><td>Capacidade</td><td><span class="code-key">disco_total_gb</span></td><td id="mTotal">--</td></tr></tbody></table></div></section><section class="alerts-panel"><header class="alerts-heading"><div><h3>Alertas recentes</h3><p>Eventos detectados durante o monitoramento</p></div><span class="alerts-count" id="alertCount">0</span></header><div class="alerts-table-wrapper table-spaced"><table class="alerts-table"><thead><tr><th>Horário</th><th>Nível</th><th>Valor</th></tr></thead><tbody id="recentAlerts"><tr><td colspan="3">Nenhum alerta recente</td></tr></tbody></table></div></section></div></div></main><script src="../../config.js"></script><script src="disco.js"></script><script src="../alertas.js"></script></body></html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>EcomCore - Monitoramento de Disco</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="../../imgs/favcore1.png">
+    <link rel="stylesheet" href="../../dashboard.css">
+    <link rel="stylesheet" href="../Ana-Clara/disco.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <aside class="sidebar">
+        <div>
+            <div class="brand"><img src="../../imgs/EcomCoresemfundo.png" alt="Logo EcomCore" class="brand-logo"></div>
+            <div class="user-profile">
+                <div class="welcome-text">Bem-vindo de volta,</div>
+                <div class="user-name">Ana-Clara</div>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item" onclick="location.href='../../index.html'"><span>Dashboard</span></li>
+                <li class="nav-item" onclick="location.href='../Marco/cpu.html'"><span>CPU (Marco)</span></li>
+                <li class="nav-item" onclick="location.href='../Jo%C3%A3o-Miguel/memoria.html'"><span>Memória RAM (João
+                        Miguel)</span></li>
+                <li class="nav-item active" onclick="location.href='../Ana-Clara/disco.html'"><span>Disco
+                        (Ana-Clara)</span></li>
+                <li class="nav-item" onclick="location.href='../Matheus/rede.html'"><span>Rede (Matheus)</span></li>
+                <li class="nav-item" onclick="location.href='../Isabelle/financeiro.html'"><span>Financeiro
+                        (Isabelle)</span></li>
+            </ul>
+        </div>
+        <div class="sidebar-actions">
+            <a class="btn-support"
+                href="https://magna-sync.atlassian.net/jira/software/projects/SCRUM/form/1?atlOrigin=eyJpIjoiNmY4MzZjZTk2MTY4NDk3Zjk1YzEwZmEwZWY2NGFkNjIiLCJwIjoiaiJ9"><span>Suporte</span></a>
+            <button class="btn-logout"
+                onclick="sessionStorage.clear();localStorage.clear();history.back()"><span>Sair</span></button>
+        </div>
+    </aside>
+    <main class="main-content">
+        <header class="header">
+            <h2>Monitoramento de Disco · Servidor 4</h2>
+            <p>Uso do armazenamento e desempenho das operações de leitura e escrita</p>
+        </header>
+        <section class="kpi-grid">
+            <article class="kpi-card">
+                <p class="kpi-label">Armazenamento utilizado</p>
+                <p class="kpi-value" id="percentual">--%</p>
+                <p class="kpi-description" id="estado">Nível: --</p>
+            </article>
+            <article class="kpi-card">
+                <p class="kpi-label">Espaço disponível</p>
+                <p class="kpi-value" id="livre">-- GB</p>
+                <p class="kpi-description">Espaço livre no volume monitorado</p>
+            </article>
+            <article class="kpi-card">
+                <p class="kpi-label">Utilização de I/O</p>
+                <p class="kpi-value" id="ioUtilizacao">--%</p>
+                <p class="kpi-description">Tempo ocupado do disco (quando disponível)</p>
+            </article>
+            <article class="kpi-card">
+                <p class="kpi-label">IOPS</p>
+                <p class="kpi-value" id="iops">--</p>
+                <p class="kpi-description">Operações de leitura + escrita por segundo</p>
+            </article>
+        </section>
+        <p class="metrics-status" id="status">Aguardando primeira leitura…</p>
+        <div class="monitoring-layout disco-layout">
+            <section class="disco-charts">
+                <article class="card chart-card">
+                    <header class="chart-heading">
+                        <h3>Latência de leitura e escrita</h3>
+                        <p>Tempo médio por operação (ms)</p>
+                    </header>
+                    <div class="chart-container"><canvas id="graficoLatencia"></canvas></div>
+                </article>
+                <article class="card chart-card">
+                    <header class="chart-heading">
+                        <h3>Taxa de transferência</h3>
+                        <p>Dados lidos e gravados por segundo (MB/s)</p>
+                    </header>
+                    <div class="chart-container"><canvas id="graficoTransferencia"></canvas></div>
+                </article>
+            </section>
+            <div class="right-column-stack">
+                <section class="alerts-panel">
+                    <header class="alerts-heading">
+                        <div>
+                            <h3>Métricas coletadas</h3>
+                            <p>Detalhamento das capturas recentes</p>
+                        </div><span class="metric-tag">API</span>
+                    </header>
+                    <div class="alerts-table-wrapper table-spaced">
+                        <table class="alerts-table">
+                            <thead>
+                                <tr>
+                                    <th>Métrica</th>
+                                    <th>Valor atual</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Espaço usado</td>
+                                    <td id="mUsado">--</td>
+                                </tr>
+                                <tr>
+                                    <td>Espaço disponível</td>
+                                    <td id="mLivre">--</td>
+                                </tr>
+                                <tr>
+                                    <td>Capacidade total</td>
+                                    <td id="mTotal">--</td>
+                                </tr>
+                                <tr>
+                                    <td>Uso do disco</td>
+                                    <td id="mPercent">--</td>
+                                </tr>
+                                <tr>
+                                    <td>Utilização I/O</td>
+                                    <td id="mIO">--</td>
+                                </tr>
+                                <tr>
+                                    <td>IOPS</td>
+                                    <td id="mIOPS">--</td>
+                                </tr>
+                                <tr>
+                                    <td>Latência leitura</td>
+                                    <td id="mLatRead">--</td>
+                                </tr>
+                                <tr>
+                                    <td>Latência escrita</td>
+                                    <td id="mLatWrite">--</td>
+                                </tr>
+                                <tr>
+                                    <td>Leitura</td>
+                                    <td id="mRead">--</td>
+                                </tr>
+                                <tr>
+                                    <td>Escrita</td>
+                                    <td id="mWrite">--</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+                <section class="alerts-panel">
+                    <header class="alerts-heading">
+                        <div>
+                            <h3>Alertas recentes</h3>
+                            <p>Eventos detectados durante o monitoramento</p>
+                        </div><span class="alerts-count" id="alertCount">0</span>
+                    </header>
+                    <div class="alerts-table-wrapper table-spaced">
+                        <table class="alerts-table">
+                            <thead>
+                                <tr>
+                                    <th>Horário</th>
+                                    <th>Nível</th>
+                                    <th>Valor</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recentAlerts">
+                                <tr>
+                                    <td colspan="3">Nenhum alerta recente</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+    <script src="../../config.js"></script>
+    <script src="disco.js"></script>
+    <script src="../alertas.js"></script>
+</body>
+
+</html>

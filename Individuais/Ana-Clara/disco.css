@@ -1,0 +1,10 @@
+.disco-layout { align-items: stretch; }
+.disco-charts { display:grid; grid-template-columns:1fr; gap:14px; min-width:0; }
+.disco-charts .chart-card { min-height:320px; display:flex; flex-direction:column; }
+.disco-charts .chart-container { height:260px; min-height:240px; }
+.right-column-stack { display:grid; grid-template-rows:minmax(0,1fr) minmax(0,.8fr); gap:14px; min-height:0; }
+.right-column-stack > .alerts-panel { min-height:250px; overflow:hidden; display:flex; flex-direction:column; }
+.right-column-stack .alerts-table-wrapper { flex:1; overflow-y:auto; }
+@media (min-width:1200px) { .disco-layout { grid-template-columns:minmax(0,1.65fr) minmax(330px,1fr); } }
+@media (max-width:900px) { .disco-layout { grid-template-columns:1fr; } .disco-charts .chart-card { min-height:290px; } }
+@media (max-width:600px) { .disco-charts .chart-container { height:230px; } }
