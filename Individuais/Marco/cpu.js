@@ -14,13 +14,8 @@ const horariosHistorico = [];
 const historicoCpuTotal = [];
 
 function obterQueryServidor() {
-  const params = new URLSearchParams(window.location.search);
-  const idServidorUrl =
-    params.get('servidor') ||
-    params.get('id_servidor') ||
-    sessionStorage.getItem('SERVIDOR_LOGIN') ||
-    '6';
-  return `?id_servidor=${encodeURIComponent(idServidorUrl)}`;
+  const idServidor = window.CONFIG_SERVIDOR?.id;
+  return idServidor ? `?id_servidor=${encodeURIComponent(idServidor)}` : '';
 }
 
 function inicializarGraficos() {

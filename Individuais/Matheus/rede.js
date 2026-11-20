@@ -19,12 +19,10 @@ let graficoDisponibilidade = null;
 const alertas = [];
 let conectadoAnterior = null;
 
-// Sem ?servidor= na URL, a API usa o ID_SERVIDOR da instância que serve a página
-// (o servidor da própria EC2). Com ?servidor=N, mostra o servidor N.
+
 function obterQueryServidor() {
-  const params = new URLSearchParams(window.location.search);
-  const idServidorUrl = params.get('servidor') || params.get('id_servidor');
-  return idServidorUrl ? `?id_servidor=${encodeURIComponent(idServidorUrl)}` : '';
+  const idServidor = window.CONFIG_SERVIDOR?.id;
+  return idServidor ? `?id_servidor=${encodeURIComponent(idServidor)}` : '';
 }
 
 function formatar(valor, casas) {
