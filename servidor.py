@@ -50,6 +50,7 @@ def carregar_env(caminho):
 
 
 ENV = carregar_env(CAMINHO_ENV)
+COLETAR = ENV.get("COLETAR_METRICAS", "true").strip().lower() not in ("0", "false", "nao", "não", "no")
 SLACK_WEBHOOK_URL = ENV.get("SLACK_WEBHOOK_URL")
 CONFIG_BANCO = {
     "host": ENV.get("DB_HOST"),
@@ -565,7 +566,7 @@ def buscar_kpis(id_servidor=ID_SERVIDOR):
                 pico = {"recurso": recurso, "valor": valor_pico}
 
         espaco_livre_disco = None
-        if id_servidor == ID_SERVIDOR:
+        if COLETAR and id_servidor == ID_SERVIDOR:
             uso_disco = psutil.disk_usage(os.path.abspath(os.sep))
             espaco_livre_disco = {
                 "livre_gb": uso_disco.free / (1024 ** 3),
@@ -705,10 +706,13 @@ if __name__ == "__main__":
         f"Banco: {CONFIG_BANCO['host']}:{CONFIG_BANCO['port']} / "
         f"{CONFIG_BANCO['database']}"
     )
-    preparar_especificacoes()
-    monitor_memoria.preparar_especificacoes_memoria(CONFIG_BANCO, ID_SERVIDOR)
-    monitor_disco.preparar_especificacoes_disco(CONFIG_BANCO, ID_SERVIDOR)
-    threading.Thread(target=loop_gravacao, daemon=True).start()
+    if COLETAR:
+        preparar_especificacoes()
+        monitor_memoria.preparar_especificacoes_memoria(CONFIG_BANCO, ID_SERVIDOR)
+        monitor_disco.preparar_especificacoes_disco(CONFIG_BANCO, ID_SERVIDOR)
+        threading.Thread(target=loop_gravacao, daemon=True).start()
+    else:
+        print("Coleta desativada nesta instância (COLETAR_METRICAS=false).")
     servidor = ThreadingHTTPServer(("0.0.0.0", 8000), Servidor)
     print("Dashboard e API disponíveis na porta 8000.")
     servidor.serve_forever()
