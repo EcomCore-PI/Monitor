@@ -12,12 +12,16 @@ const COR_ROXO = '#a78bfa';
 const INTERVALO_MS = 5000;      // o captura.jar grava a cada 5 segundos
 const LIMITE_SEM_DADOS_S = 30;  // sem coleta nova por mais que isso = coletor parado
 const MAX_ALERTAS = 30;
+const LIMITE_REDE_ATENCAO_MBPS = 80;
+const LIMITE_REDE_CRITICO_MBPS = 150;
 
 let graficoErros = null;
 let graficoDisponibilidade = null;
 
 const alertas = [];
 let conectadoAnterior = null;
+let nivelDownloadAnterior = 'normal';
+let nivelUploadAnterior = 'normal';
 
 
 function obterQueryServidor() {
@@ -135,6 +139,36 @@ function registrarTransicoes(ultimo, conectado) {
     adicionarAlerta('INFO', 'Conexão restabelecida', `${formatar(ultimo.latencia_ms, 1)} ms`, ultimo.horario);
   }
   conectadoAnterior = conectado;
+
+  nivelDownloadAnterior = registrarLimiteTrafego(
+    'Download', ultimo.download_mbps, nivelDownloadAnterior, ultimo.horario
+  );
+  nivelUploadAnterior = registrarLimiteTrafego(
+    'Upload', ultimo.upload_mbps, nivelUploadAnterior, ultimo.horario
+  );
+}
+
+function registrarLimiteTrafego(nome, valor, nivelAnterior, horario) {
+  if (valor == null || !Number.isFinite(Number(valor))) return nivelAnterior;
+
+  const velocidade = Number(valor);
+  const nivelAtual = velocidade >= LIMITE_REDE_CRITICO_MBPS
+    ? 'CRITICO'
+    : velocidade >= LIMITE_REDE_ATENCAO_MBPS
+      ? 'ATENCAO'
+      : 'NORMAL';
+
+  const prioridade = { NORMAL: 0, ATENCAO: 1, CRITICO: 2 };
+  if (prioridade[nivelAtual] > prioridade[nivelAnterior.toUpperCase()]) {
+    adicionarAlerta(
+      nivelAtual,
+      `${nome} acima do limite`,
+      `${formatar(velocidade, 1)} Mbps`,
+      horario
+    );
+  }
+
+  return nivelAtual.toLowerCase();
 }
 
 function renderizarAlertas() {

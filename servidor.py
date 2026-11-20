@@ -487,7 +487,7 @@ def buscar_dados_dashboard(id_servidor=ID_SERVIDOR):
         conexao.close()
 
 
-def buscar_alertas(id_servidor=ID_SERVIDOR):
+def buscar_alertas(id_servidor=ID_SERVIDOR, recurso=None):
     conexao = mysql.connector.connect(**CONFIG_BANCO)
     cursor = None
     try:
@@ -513,10 +513,11 @@ def buscar_alertas(id_servidor=ID_SERVIDOR):
             JOIN tipo_componente tc ON tc.id = c.fk_tipo_componente
             JOIN metrica m ON m.id = et.fk_metrica
             WHERE s.id = %s
+              AND (%s IS NULL OR tc.nome = %s)
             ORDER BY a.data DESC, a.id DESC
             LIMIT %s
             """,
-            (id_servidor, LIMITE_ALERTAS),
+            (id_servidor, recurso, recurso, LIMITE_ALERTAS),
         )
 
         alertas = []
@@ -664,7 +665,8 @@ class Servidor(SimpleHTTPRequestHandler):
 
         if caminho == "/alertas":
             try:
-                self.responder_json(buscar_alertas(id_servidor))
+                recurso = parse_qs(url.query).get("recurso", [None])[0]
+                self.responder_json(buscar_alertas(id_servidor, recurso))
             except Exception as erro:
                 print(f"[ERRO] Consulta de alertas falhou: {erro}")
                 self.responder_json(

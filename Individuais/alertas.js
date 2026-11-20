@@ -1,8 +1,76 @@
-﻿(function(){
- const path=location.pathname.toLowerCase();
- const config=path.includes('memoria')?{url:'/metricas/memoria',key:'ram_percentual',label:'Memória RAM',warn:80,critical:90,unit:'%'}:path.includes('disco')?{url:'/metricas/disco',key:'disco_percentual',label:'Disco',warn:80,critical:90,unit:'%'}:{url:'/metricas/rede',key:'download_mbps',label:'Rede',warn:80,critical:150,unit:' Mbps'};
- let lastLevel='normal';const rows=[];
- async function check(){try{const base=typeof API_URL!=='undefined'?API_URL:'';const response=await fetch(`${base}${config.url}`);if(!response.ok)throw Error();let data=await response.json();if(Array.isArray(data))data=data.at(-1);if(!data)return;let value=Number(data[config.key]??0);let level=value>=config.critical?'critical':value>=config.warn?'warning':'normal';if(level!==lastLevel&&level!=='normal'){rows.unshift({time:data.horario||new Date().toLocaleTimeString('pt-BR'),level,value});rows.splice(4);render()}lastLevel=level}catch(_){}}
- function render(){const body=document.getElementById('recentAlerts');if(!body)return;document.getElementById('alertCount').textContent=rows.length;body.innerHTML=rows.length?rows.map(item=>`<tr><td>${item.time}</td><td><span class="alert-level alert-level--${item.level}">${item.level==='critical'?'CRÍTICO':'ATENÇÃO'}</span></td><td>${item.value.toFixed(1)}${config.unit}</td></tr>`).join(''):'<tr><td colspan="3">Nenhum alerta recente</td></tr>'}
- check();setInterval(check,3000);
+﻿(() => {
+    const caminho = window.location.pathname.toLowerCase();
+    const recursoAlvo = caminho.includes('memoria')
+        ? 'ram'
+        : caminho.includes('disco')
+            ? 'disco'
+            : null;
+    const corpo = document.getElementById('recentAlerts');
+    const contador = document.getElementById('alertCount');
+    if (!corpo || !contador) return;
+
+    function idServidorAtual() {
+        const params = new URLSearchParams(window.location.search);
+        const informado = params.get('id_servidor') || params.get('servidor');
+        const id = Number(informado || window.CONFIG_SERVIDOR?.id || 3);
+        return Number.isInteger(id) && id > 0 ? id : 3;
+    }
+
+    function alertasDoRecurso(alertas) {
+        if (!recursoAlvo) return alertas;
+        return alertas.filter(alerta =>
+            String(alerta.recurso || '').toLowerCase().includes(recursoAlvo)
+        );
+    }
+
+    function renderizar(alertas) {
+        const recentes = alertasDoRecurso(alertas).slice(0, 4);
+        contador.textContent = String(recentes.length);
+        corpo.replaceChildren();
+
+        if (recentes.length === 0) {
+            const linha = document.createElement('tr');
+            const celula = document.createElement('td');
+            celula.colSpan = 3;
+            celula.textContent = 'Nenhum alerta recente';
+            linha.append(celula);
+            corpo.append(linha);
+            return;
+        }
+
+        for (const alerta of recentes) {
+            const linha = document.createElement('tr');
+            const horario = document.createElement('td');
+            const nivel = document.createElement('td');
+            const valor = document.createElement('td');
+            const selo = document.createElement('span');
+            const critico = String(alerta.nivel).toUpperCase() === 'CRITICO';
+
+            horario.textContent = alerta.horario_captura || alerta.data || '--:--';
+            selo.className = `alert-level alert-level--${critico ? 'critical' : 'warning'}`;
+            selo.textContent = critico ? 'CRÍTICO' : 'ATENÇÃO';
+            nivel.append(selo);
+            valor.textContent = `${Number(alerta.valor_medido).toFixed(1)}${alerta.unidade || ''}`;
+            linha.append(horario, nivel, valor);
+            corpo.append(linha);
+        }
+    }
+
+    async function atualizar() {
+        try {
+            const filtroRecurso = recursoAlvo === 'ram' ? '&recurso=RAM' : recursoAlvo === 'disco' ? '&recurso=Disco' : '';
+            const resposta = await fetch(`/alertas?id_servidor=${idServidorAtual()}${filtroRecurso}`, {
+                cache: 'no-store'
+            });
+            if (!resposta.ok) throw new Error(`HTTP ${resposta.status}`);
+            const dados = await resposta.json();
+            if (!Array.isArray(dados.alertas)) throw new Error('Resposta /alertas inválida.');
+            renderizar(dados.alertas);
+        } catch (erro) {
+            console.error('Falha ao atualizar alertas recentes:', erro);
+        }
+    }
+
+    atualizar();
+    setInterval(atualizar, 5000);
 })();
