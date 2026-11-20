@@ -699,6 +699,20 @@ class Servidor(SimpleHTTPRequestHandler):
                 )
             return
 
+        if caminho == "/metricas/memoria/por-hora":
+            try:
+                dados_memoria = monitor_memoria.buscar_comparativo_memoria_por_hora(
+                    CONFIG_BANCO, id_servidor
+                )
+                self.responder_json(dados_memoria or [])
+            except Exception as erro:
+                print(f"[ERRO] Consulta do comparativo horário de memória falhou: {erro}")
+                self.responder_json(
+                    {"erro": "Não foi possível consultar o comparativo horário de memória."},
+                    503,
+                )
+            return
+
         if caminho == "/metricas/disco":
             try:
                 dados_disco = monitor_disco.buscar_metricas_disco(

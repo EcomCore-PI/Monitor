@@ -6,8 +6,6 @@ Chart.defaults.font.family = "'Inter', sans-serif";
 // Histórico dos gráficos
 const labels = [];
 const historicoPercentual = [];
-const historicoUsada = [];
-const historicoDisponivel = [];
 
 // Primeiro gráfico: percentual de RAM
 const graficoPercentual = new Chart(
@@ -52,22 +50,12 @@ const graficoPercentual = new Chart(
 const graficoMemoria = new Chart(
     document.getElementById('grafico-memoria'),
     {
-        type: 'line',
+        type: 'bar',
         data: {
-            labels: labels,
+            labels: [],
             datasets: [
-                {
-                    label: 'RAM utilizada (GB)',
-                    data: historicoUsada,
-                    borderColor: '#005AFE',
-                    tension: 0.3
-                },
-                {
-                    label: 'RAM disponível (GB)',
-                    data: historicoDisponivel,
-                    borderColor: '#22c55e',
-                    tension: 0.3
-                }
+                { label: 'RAM utilizada (GB)', data: [], backgroundColor: '#005AFEbb', borderColor: '#005AFE', borderWidth: 1 },
+                { label: 'RAM disponível (GB)', data: [], backgroundColor: '#22c55ebb', borderColor: '#22c55e', borderWidth: 1 }
             ]
         },
         options: {
@@ -75,14 +63,13 @@ const graficoMemoria = new Chart(
             maintainAspectRatio: false,
             animation: false,
             scales: {
-                y: {
-                    beginAtZero: true
-                }
-            }
+                y: { beginAtZero: true, title: { display: true, text: 'Memória (GB)' } },
+                x: { title: { display: true, text: 'Hora do dia' } }
+            },
+            plugins: { tooltip: { callbacks: { footer: items => `Média da hora; ${items[0]?.label || ''}` } } }
         }
     }
 );
-
 
 // Atualiza os dados da dashboard
 async function atualizar() {
@@ -139,8 +126,6 @@ async function atualizar() {
         // Recarrega os gráficos com o histórico persistido no banco.
         labels.splice(0, labels.length, ...registros.map(item => item.horario || '--:--'));
         historicoPercentual.splice(0, historicoPercentual.length, ...registros.map(item => Number(item.ram_percentual || 0)));
-        historicoUsada.splice(0, historicoUsada.length, ...registros.map(item => Number(item.ram_usada_gb || 0)));
-        historicoDisponivel.splice(0, historicoDisponivel.length, ...registros.map(item => Number(item.ram_disponivel_gb || 0)));
 
 
         // Atualiza os gráficos
@@ -148,6 +133,13 @@ async function atualizar() {
             labels.map(() => 80);
 
         graficoPercentual.update();
+
+        const respostaPorHora = await fetch(`/metricas/memoria/por-hora?id_servidor=${idServidor}`);
+        if (!respostaPorHora.ok) throw new Error('Erro ao buscar comparativo por hora');
+        const comparativo = await respostaPorHora.json();
+        graficoMemoria.data.labels = comparativo.map(item => `${String(item.hora).padStart(2, '0')}:00`);
+        graficoMemoria.data.datasets[0].data = comparativo.map(item => Number(item.ram_usada_gb));
+        graficoMemoria.data.datasets[1].data = comparativo.map(item => Number(item.ram_disponivel_gb));
         graficoMemoria.update();
 
 

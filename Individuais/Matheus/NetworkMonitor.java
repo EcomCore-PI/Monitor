@@ -75,5 +75,6 @@ public class NetworkMonitor {
             download, upload, current.received, current.sent, ping[0], ping[1],
             current.receiveErrors, current.sendErrors, current.receiveDrops, current.collisions,
             100.0 - Double.parseDouble(ping[1]));
+
     }
 }
