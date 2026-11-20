@@ -135,7 +135,7 @@ async function atualizar() {
 
         graficoPercentual.update();
 
-        const respostaPorHora = await fetch(`/metricas/memoria/por-hora?id_servidor=${idServidor}`);
+        const respostaPorHora = await fetch(`/metricas/memoria/por-hora${query}`);
         if (!respostaPorHora.ok) throw new Error('Erro ao buscar comparativo por hora');
         const comparativo = await respostaPorHora.json();
         graficoMemoria.data.labels = comparativo.map(item => `${String(item.hora).padStart(2, '0')}:00`);
