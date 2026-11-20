@@ -12,7 +12,6 @@ window.CONFIG_SERVIDOR = {
     id: idAtivo
 };
 
-// Mapeia cada rota individual para o seu respectivo servidor
 const SERVIDORES_POR_ROTA = {
     'cpu.html': 6,
     'memoria.html': 3,
@@ -21,17 +20,20 @@ const SERVIDORES_POR_ROTA = {
     'financeiro.html': 5
 };
 
-// Função global de logout: limpa a sessão e vai direto para o login (sem porta 8000)
-window.logout = function () {
+function executarLogout() {
     sessionStorage.clear();
     localStorage.clear();
 
     const destinoLogin = `${window.location.protocol}//${window.location.hostname}/login.html`;
     window.location.replace(destinoLogin);
-};
+}
+
+window.logout = executarLogout;
 
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Garante o roteamento da barra lateral para o servidor correto de cada componente
+    // Sobrescreve qualquer function logout() { window.history.back(); } declarada nos HTMLs individuais
+    window.logout = executarLogout;
+
     document.querySelectorAll('.nav-menu .nav-item').forEach((item) => {
         const texto = item.textContent.toLowerCase();
         let destino = null;
@@ -50,11 +52,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // 2. Força o botão Sair (.btn-logout) a ir direto para o login em todas as telas
     document.querySelectorAll('.btn-logout').forEach((btn) => {
-        btn.onclick = (event) => {
+        btn.removeAttribute('onclick');
+        btn.addEventListener('click', (event) => {
             event.preventDefault();
-            window.logout();
-        };
+            executarLogout();
+        });
     });
 });
