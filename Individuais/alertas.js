@@ -1,13 +1,17 @@
 ﻿(() => {
     const caminho = window.location.pathname.toLowerCase();
-    const recursoAlvo = caminho.includes('memoria')
-        ? 'ram'
+    const config = caminho.includes('memoria')
+        ? { url: '/metricas/memoria', chave: 'ram_percentual', atencao: 80, critico: 90, unidade: '%' }
         : caminho.includes('disco')
-            ? 'disco'
+            ? { url: '/metricas/disco', chave: 'disco_percentual', atencao: 80, critico: 90, unidade: '%' }
             : null;
+
     const corpo = document.getElementById('recentAlerts');
     const contador = document.getElementById('alertCount');
-    if (!corpo || !contador) return;
+    if (!config || !corpo || !contador) return;
+
+    const alertas = [];
+    let nivelAnterior = 'normal';
 
     function idServidorAtual() {
         const params = new URLSearchParams(window.location.search);
@@ -16,15 +20,8 @@
         return Number.isInteger(id) && id > 0 ? id : 3;
     }
 
-    function alertasDoRecurso(alertas) {
-        if (!recursoAlvo) return alertas;
-        return alertas.filter(alerta =>
-            String(alerta.recurso || '').toLowerCase().includes(recursoAlvo)
-        );
-    }
-
-    function renderizar(alertas) {
-        const recentes = alertasDoRecurso(alertas).slice(0, 4);
+    function renderizar() {
+        const recentes = alertas.slice(0, 4);
         contador.textContent = String(recentes.length);
         corpo.replaceChildren();
 
@@ -44,13 +41,12 @@
             const nivel = document.createElement('td');
             const valor = document.createElement('td');
             const selo = document.createElement('span');
-            const critico = String(alerta.nivel).toUpperCase() === 'CRITICO';
 
-            horario.textContent = alerta.horario_captura || alerta.data || '--:--';
-            selo.className = `alert-level alert-level--${critico ? 'critical' : 'warning'}`;
-            selo.textContent = critico ? 'CRÍTICO' : 'ATENÇÃO';
+            horario.textContent = alerta.horario;
+            selo.className = `alert-level alert-level--${alerta.nivel}`;
+            selo.textContent = alerta.nivel === 'critical' ? 'CRÍTICO' : 'ATENÇÃO';
             nivel.append(selo);
-            valor.textContent = `${Number(alerta.valor_medido).toFixed(1)}${alerta.unidade || ''}`;
+            valor.textContent = `${alerta.valor.toFixed(1)}${config.unidade}`;
             linha.append(horario, nivel, valor);
             corpo.append(linha);
         }
@@ -58,19 +54,41 @@
 
     async function atualizar() {
         try {
-            const filtroRecurso = recursoAlvo === 'ram' ? '&recurso=RAM' : recursoAlvo === 'disco' ? '&recurso=Disco' : '';
-            const resposta = await fetch(`/alertas?id_servidor=${idServidorAtual()}${filtroRecurso}`, {
-                cache: 'no-store'
-            });
+            const resposta = await fetch(
+                `${config.url}?id_servidor=${idServidorAtual()}`,
+                { cache: 'no-store' }
+            );
             if (!resposta.ok) throw new Error(`HTTP ${resposta.status}`);
-            const dados = await resposta.json();
-            if (!Array.isArray(dados.alertas)) throw new Error('Resposta /alertas inválida.');
-            renderizar(dados.alertas);
+
+            const retorno = await resposta.json();
+            const registros = Array.isArray(retorno) ? retorno : [retorno];
+            const leitura = registros.slice().reverse().find(item =>
+                item && item[config.chave] != null && Number.isFinite(Number(item[config.chave]))
+            );
+            if (!leitura) return;
+
+            const valor = Number(leitura[config.chave]);
+            const nivelAtual = valor >= config.critico
+                ? 'critical'
+                : valor >= config.atencao
+                    ? 'warning'
+                    : 'normal';
+
+            if (nivelAtual !== nivelAnterior && nivelAtual !== 'normal') {
+                alertas.unshift({
+                    horario: leitura.horario || new Date().toLocaleTimeString('pt-BR'),
+                    nivel: nivelAtual,
+                    valor
+                });
+                alertas.splice(4);
+                renderizar();
+            }
+            nivelAnterior = nivelAtual;
         } catch (erro) {
-            console.error('Falha ao atualizar alertas recentes:', erro);
+            console.error('Falha ao verificar limite de alerta:', erro);
         }
     }
 
     atualizar();
-    setInterval(atualizar, 5000);
+    setInterval(atualizar, 3000);
 })();
