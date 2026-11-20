@@ -21,7 +21,17 @@ const SERVIDORES_POR_ROTA = {
     'financeiro.html': 5
 };
 
+// Função global de logout: limpa a sessão e vai direto para o login (sem porta 8000)
+window.logout = function () {
+    sessionStorage.clear();
+    localStorage.clear();
+
+    const destinoLogin = `${window.location.protocol}//${window.location.hostname}/login.html`;
+    window.location.replace(destinoLogin);
+};
+
 document.addEventListener('DOMContentLoaded', () => {
+    // 1. Garante o roteamento da barra lateral para o servidor correto de cada componente
     document.querySelectorAll('.nav-menu .nav-item').forEach((item) => {
         const texto = item.textContent.toLowerCase();
         let destino = null;
@@ -38,5 +48,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 window.location.href = destino;
             };
         }
+    });
+
+    // 2. Força o botão Sair (.btn-logout) a ir direto para o login em todas as telas
+    document.querySelectorAll('.btn-logout').forEach((btn) => {
+        btn.onclick = (event) => {
+            event.preventDefault();
+            window.logout();
+        };
     });
 });
