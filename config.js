@@ -1,7 +1,6 @@
 const parametros = new URLSearchParams(window.location.search);
 const idUrl = parseInt(parametros.get('servidor') || parametros.get('id_servidor'), 10);
 
-// Sempre que a URL trouxer ?servidor=X (seja do login ou do clique no menu), atualiza o ativo
 if (Number.isInteger(idUrl) && idUrl > 0) {
     sessionStorage.setItem('SERVIDOR_LOGIN', idUrl);
 }
@@ -13,9 +12,31 @@ window.CONFIG_SERVIDOR = {
     id: idAtivo
 };
 
-// Se abriu uma página sem ?servidor= na URL (ex: Dashboard geral), exibe o ativo na barra
-if (idAtivo && !parametros.has('servidor') && !parametros.has('id_servidor')) {
-    parametros.set('servidor', idAtivo);
-    const novaUrl = `${window.location.pathname}?${parametros.toString()}${window.location.hash}`;
-    window.history.replaceState({}, '', novaUrl);
-}
+// Mapeia cada rota individual para o seu respectivo servidor
+const SERVIDORES_POR_ROTA = {
+    'cpu.html': 6,
+    'memoria.html': 3,
+    'disco.html': 4,
+    'rede.html': 1,
+    'financeiro.html': 5
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.nav-menu .nav-item').forEach((item) => {
+        const texto = item.textContent.toLowerCase();
+        let destino = null;
+
+        if (texto.includes('cpu')) destino = '/Individuais/Marco/cpu.html?servidor=6';
+        else if (texto.includes('memória') || texto.includes('memoria')) destino = '/Individuais/Jo%C3%A3o-Miguel/memoria.html?servidor=3';
+        else if (texto.includes('disco')) destino = '/Individuais/Ana-Clara/disco.html?servidor=4';
+        else if (texto.includes('rede')) destino = '/Individuais/Matheus/rede.html?servidor=1';
+        else if (texto.includes('financeiro')) destino = '/Individuais/Isabelle/financeiro.html?servidor=5';
+        else if (texto.includes('dashboard')) destino = '/index.html';
+
+        if (destino) {
+            item.onclick = () => {
+                window.location.href = destino;
+            };
+        }
+    });
+});
