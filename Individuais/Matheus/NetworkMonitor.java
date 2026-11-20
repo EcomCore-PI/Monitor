@@ -39,8 +39,8 @@ public class NetworkMonitor {
         boolean windows = System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("win");
         try {
             Process process = new ProcessBuilder(windows
-                ? new String[]{"ping", "-n", "4", "-w", "1000", target}
-                : new String[]{"ping", "-c", "4", "-W", "1", target})
+                ? new String[]{"ping", "-n", "1", "-w", "1000", target}
+                : new String[]{"ping", "-c", "1", "-W", "1", target})
                 .redirectErrorStream(true).start();
             String output;
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
@@ -49,7 +49,7 @@ public class NetworkMonitor {
                 while ((line = reader.readLine()) != null) text.append(line).append('\n');
                 output = text.toString();
             }
-            if (!process.waitFor(7, TimeUnit.SECONDS)) { process.destroyForcibly(); return "null,100"; }
+            if (!process.waitFor(3, TimeUnit.SECONDS)) { process.destroyForcibly(); return "null,100"; }
             java.util.regex.Matcher loss = java.util.regex.Pattern.compile("(?i)(\\d+(?:\\.\\d+)?)%\\s*(?:packet )?loss").matcher(output);
             double packetLoss = loss.find() ? Double.parseDouble(loss.group(1)) : (process.exitValue() == 0 ? 0 : 100);
             java.util.regex.Matcher latency = java.util.regex.Pattern.compile(

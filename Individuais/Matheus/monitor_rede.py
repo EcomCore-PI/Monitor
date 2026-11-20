@@ -101,7 +101,7 @@ def preparar_especificacoes_rede(config_banco, id_servidor):
         conexao.close()
 
 
-def buscar_metricas_rede(config_banco, id_servidor, limite=15):
+def buscar_metricas_rede(config_banco, id_servidor, limite=60):
     """Histórico das últimas coletas de rede do servidor, no mesmo formato de buscar_metricas_cpu."""
     conexao = mysql.connector.connect(**config_banco)
     cursor = None

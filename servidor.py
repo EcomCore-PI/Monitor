@@ -32,6 +32,7 @@ CAMINHO_ENV = os.environ.get("ENV_PATH") or next(
     os.path.join(PASTA_ATUAL, ".env.dev"),
 )
 INTERVALO_GRAVACAO = 15
+INTERVALO_GRAVACAO_REDE = 3
 LIMITE_HISTORICO = 30
 LIMITE_ALERTAS = 50
 
@@ -85,11 +86,7 @@ RECURSOS_OBRIGATORIOS = {"CPU", "RAM", "Disco"}
 # ---------------------------------------------------------------------------
 # Coleta na máquina onde este programa está rodando
 # ---------------------------------------------------------------------------
-def coletar_dados():
-    cpu_percent = psutil.cpu_percent(interval=1)
-    memoria = psutil.virtual_memory()
-    caminho_disco = os.path.abspath(os.sep)
-    disco = psutil.disk_usage(caminho_disco)
+def coletar_metricas_rede_instancia():
     caminho_java = os.environ.get("NETWORK_MONITOR_CLASS_PATH")
     if caminho_java:
         comando_java = ["java", "-cp", caminho_java, "NetworkMonitor"]
@@ -99,7 +96,15 @@ def coletar_dados():
     processo = subprocess.run(
         comando_java, capture_output=True, text=True, check=True, timeout=20
     )
-    rede = json.loads(processo.stdout.strip().splitlines()[-1])
+    return json.loads(processo.stdout.strip().splitlines()[-1])
+
+
+def coletar_dados():
+    cpu_percent = psutil.cpu_percent(interval=1)
+    memoria = psutil.virtual_memory()
+    caminho_disco = os.path.abspath(os.sep)
+    disco = psutil.disk_usage(caminho_disco)
+    rede = coletar_metricas_rede_instancia()
 
     return {
         "cpu_percent": float(cpu_percent),
@@ -418,10 +423,6 @@ def loop_gravacao():
             gravar_metricas_cpu(CONFIG_BANCO, ID_SERVIDOR)
             monitor_memoria.gravar_metricas_memoria(CONFIG_BANCO, ID_SERVIDOR)
             monitor_disco.gravar_metricas_disco(CONFIG_BANCO, ID_SERVIDOR)
-            monitor_rede.gravar_metricas_rede(
-                CONFIG_BANCO, ID_SERVIDOR, dados["metricas_rede"]
-            )
-
             print(
                 f"[OK] CPU {dados['cpu_percent']:.1f}% | "
                 f"RAM {dados['memoria_percent']:.1f}% | "
@@ -432,6 +433,18 @@ def loop_gravacao():
         except Exception as erro:
             print(f"[ERRO] Não foi possível gravar a coleta: {erro}")
         time.sleep(INTERVALO_GRAVACAO)
+
+
+def loop_gravacao_rede():
+    while True:
+        inicio_ciclo = time.monotonic()
+        try:
+            metricas = coletar_metricas_rede_instancia()
+            monitor_rede.gravar_metricas_rede(CONFIG_BANCO, ID_SERVIDOR, metricas)
+        except Exception as erro:
+            print(f"[ERRO] NÃ£o foi possÃ­vel gravar mÃ©tricas de rede: {erro}")
+        duracao_ciclo = time.monotonic() - inicio_ciclo
+        time.sleep(max(0, INTERVALO_GRAVACAO_REDE - duracao_ciclo))
 
 
 # ---------------------------------------------------------------------------
@@ -755,6 +768,7 @@ if __name__ == "__main__":
         monitor_disco.preparar_especificacoes_disco(CONFIG_BANCO, ID_SERVIDOR)
         monitor_rede.preparar_especificacoes_rede(CONFIG_BANCO, ID_SERVIDOR)
         threading.Thread(target=loop_gravacao, daemon=True).start()
+        threading.Thread(target=loop_gravacao_rede, daemon=True).start()
     else:
         print("Coleta desativada nesta instância (COLETAR_METRICAS=false).")
     servidor = ThreadingHTTPServer(("0.0.0.0", 8000), Servidor)

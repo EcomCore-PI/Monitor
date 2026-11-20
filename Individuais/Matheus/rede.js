@@ -9,9 +9,10 @@ const COR_VERMELHO = '#ef4444';
 const COR_VERDE = '#34d399';
 const COR_ROXO = '#a78bfa';
 
-const INTERVALO_MS = 5000;      // o captura.jar grava a cada 5 segundos
-const LIMITE_SEM_DADOS_S = 30;  // sem coleta nova por mais que isso = coletor parado
+const INTERVALO_MS = 2000;      // consulta a API a cada 2 segundos
+const LIMITE_SEM_DADOS_S = 10;  // coleta detalhada esperada a cada 3 segundos
 const MAX_ALERTAS = 30;
+const JANELA_PINGS = 20;
 const LIMITE_REDE_ATENCAO_MBPS = 80;
 const LIMITE_REDE_CRITICO_MBPS = 150;
 
@@ -34,6 +35,14 @@ function formatar(valor, casas) {
     minimumFractionDigits: casas,
     maximumFractionDigits: casas
   });
+}
+
+function disponibilidadeMovel(historico, indice) {
+  const inicio = Math.max(0, indice - JANELA_PINGS + 1);
+  const janela = historico.slice(inicio, indice + 1)
+    .filter(item => item.perda_pacotes != null);
+  if (!janela.length) return null;
+  return janela.reduce((total, item) => total + (100 - Number(item.perda_pacotes)), 0) / janela.length;
 }
 
 function inicializarGraficos() {
@@ -229,7 +238,9 @@ function atualizarInterface(historico) {
   const ultimo = historico[historico.length - 1];
   const semDadosRecentes = ultimo.idade_segundos > LIMITE_SEM_DADOS_S;
   // O coletor não grava latência quando o ping falha, então latência ausente = sem resposta
-  const conectado = ultimo.latencia_ms != null;
+  const conectado = historico.slice(-3).some(item =>
+    item.perda_pacotes != null && Number(item.perda_pacotes) < 100
+  );
 
   // KPIs
   document.getElementById('kpiDownload').textContent =
@@ -238,8 +249,12 @@ function atualizarInterface(historico) {
     ultimo.upload_mbps == null ? '--' : formatar(ultimo.upload_mbps, 3);
   document.getElementById('kpiLatencia').textContent =
     ultimo.latencia_ms == null ? '--' : formatar(ultimo.latencia_ms, 1);
+  const janelaPing = historico.slice(-JANELA_PINGS).filter(item => item.perda_pacotes != null);
+  const perdaMedia = janelaPing.length
+    ? janelaPing.reduce((total, item) => total + Number(item.perda_pacotes), 0) / janelaPing.length
+    : null;
   document.getElementById('kpiPerda').textContent =
-    ultimo.perda_pacotes == null ? '--' : formatar(ultimo.perda_pacotes, 1);
+    perdaMedia == null ? '--' : formatar(perdaMedia, 1);
 
   // Estado da conexão + última atualização
   if (semDadosRecentes) {
@@ -255,12 +270,15 @@ function atualizarInterface(historico) {
 
   graficoErros.data.labels = rotulos;
   ['erros_entrada', 'erros_saida', 'descartes_entrada', 'colisoes'].forEach((chave, i) => {
-    graficoErros.data.datasets[i].data = historico.map(item => item[chave]);
+    graficoErros.data.datasets[i].data = historico.map((item, indice) => {
+      if (indice === 0 || item[chave] == null || historico[indice - 1][chave] == null) return null;
+      return Math.max(0, Number(item[chave]) - Number(historico[indice - 1][chave]));
+    });
   });
   graficoErros.update();
 
   graficoDisponibilidade.data.labels = rotulos;
-  graficoDisponibilidade.data.datasets[0].data = historico.map(item => item.disponibilidade);
+  graficoDisponibilidade.data.datasets[0].data = historico.map((item, indice) => disponibilidadeMovel(historico, indice));
   graficoDisponibilidade.update();
 
   // Alertas (só com coleta recente, para não gerar evento falso com dado antigo)
