@@ -77,7 +77,7 @@ async function atualizar() {
     try {
         const idServidor = window.CONFIG_SERVIDOR?.id;
         const query = idServidor ? `?id_servidor=${idServidor}` : '';
-        const response = await fetch(`/metricas/memoria${query}`);
+        const resposta = await fetch(`/metricas/memoria${query}`);
 
         if (!resposta.ok) {
             throw new Error('Erro ao buscar memória');
