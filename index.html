@@ -25,25 +25,28 @@
 
             <ul class="nav-menu">
                 <li class="nav-item active" onclick="window.location.href='index.html'">
-                     <span>Dashboard</span>
+                    <span>Dashboard</span>
                 </li>
-                <li class="nav-item" onclick="window.location.href='Individuais/Marco/cpu.html'">
-                     <span>CPU (Marco)</span>
+                <li class="nav-item" onclick="window.location.href='Individuais/Marco/cpu.html?servidor=6'">
+                    <span>CPU (Marco)</span>
                 </li>
-                <li class="nav-item" onclick="window.location.href='Individuais/Jo%C3%A3o-Miguel/memoria.html'">
-                     <span>Memória RAM (João Miguel)</span>
+                <li class="nav-item" onclick="window.location.href='Individuais/Jo%C3%A3o-Miguel/memoria.html?servidor=3'">
+                    <span>Memória RAM (João Miguel)</span>
                 </li>
-                <li class="nav-item" onclick="window.location.href='Individuais/Ana-Clara/disco.html'">
-                     <span>Disco (Ana-Clara)</span>
+                <li class="nav-item" onclick="window.location.href='Individuais/Ana-Clara/disco.html?servidor=4'">
+                    <span>Disco (Ana-Clara)</span>
                 </li>
-                <li class="nav-item" onclick="window.location.href='Individuais/Matheus/rede.html'">
-                     <span>Rede (Matheus)</span>
+                <li class="nav-item" onclick="window.location.href='Individuais/Matheus/rede.html?servidor=1'">
+                    <span>Rede (Matheus)</span>
                 </li>
-            <li class="nav-item" onclick="location.href='Individuais/Isabelle/financeiro.html'"><span>Financeiro (Isabelle)</span></li></ul>
+                <li class="nav-item" onclick="window.location.href='Individuais/Isabelle/financeiro.html?servidor=5'">
+                    <span>Financeiro (Isabelle)</span>
+                </li>
+            </ul>
         </div>
         <div class="sidebar-actions">
             <a class="btn-support" href="https://magna-sync.atlassian.net/jira/software/projects/SCRUM/form/1?atlOrigin=eyJpIjoiNmY4MzZjZTk2MTY4NDk3Zjk1YzEwZmEwZWY2NGFkNjIiLCJwIjoiaiJ9">
-                 <span>Suporte</span>
+                <span>Suporte</span>
             </a>
             <button class="btn-logout" onclick="logout()">
                 <span>Sair</span>
@@ -85,42 +88,75 @@
         </section>
         <p class="metrics-status" id="metrics-status" role="status">Aguardando primeira leitura…</p>
         <div class="monitoring-layout">
-        <section class="dashboard-grid" aria-label="Gráficos de hardware">
-            <article class="card chart-card">
-                <header class="chart-heading"><h3>Uso de CPU</h3><p>Uso do processador utilizada</p></header>
-                <div class="chart-container"><canvas id="chartCpu" role="img" aria-label="Carga do processador ao longo do tempo">Carga do processador ao longo do tempo</canvas></div>
-            </article>
-            <article class="card chart-card">
-                <header class="chart-heading"><h3>Memória RAM</h3><p>Percentual de memória utilizada</p></header>
-                <div class="chart-container"><canvas id="chartRam" role="img" aria-label="Percentual de memória utilizada">Percentual de memória utilizada</canvas></div>
-            </article>
-            <article class="card chart-card">
-                <header class="chart-heading"><h3>Uso de disco</h3><p>Armazenamento</p></header>
-                <div class="chart-container"><canvas id="chartDisco" role="img" aria-label="Ocupação do armazenamento">Ocupação do armazenamento</canvas></div>
-            </article>
-            <article class="card chart-card">
-                <header class="chart-heading"><h3>Tráfego de rede</h3><p id="network-status">Velocidade em Mbps de recebimento e envio</p></header>
-                <div class="chart-container"><canvas id="chartRede" role="img" aria-label="Velocidade de download e upload da rede">Velocidade de download e upload da rede</canvas></div>
-            </article>
-        </section>
-        <aside class="alerts-panel" aria-labelledby="alerts-title">
-            <header class="alerts-heading">
-                <div><h3 id="alerts-title">Histórico de alertas</h3></div>
-                <span class="alerts-count" id="alerts-count" aria-label="Quantidade de alertas">—</span>
-            </header>
-            <p class="alerts-status" id="alerts-status" role="status"></p>
-            <div class="alerts-table-wrapper" tabindex="0" role="region" aria-label="Histórico de alertas registrados">
-                <table class="alerts-table">
-                    <thead><tr><th scope="col">Componente</th><th scope="col">Valor</th><th scope="col">Limite</th><th scope="col">Nível</th><th scope="col">Data</th></tr></thead>
-                    <tbody id="alerts-body"><tr><td colspan="5" class="alerts-empty">Aguardando dados do monitoramento.</td></tr></tbody>
-                </table>
-            </div>
-        </aside>
+            <section class="dashboard-grid" aria-label="Gráficos de hardware">
+                <article class="card chart-card">
+                    <header class="chart-heading">
+                        <h3>Uso de CPU</h3>
+                        <p>Uso do processador utilizada</p>
+                    </header>
+                    <div class="chart-container"><canvas id="chartCpu" role="img" aria-label="Carga do processador ao longo do tempo">Carga do processador ao longo do tempo</canvas></div>
+                </article>
+                <article class="card chart-card">
+                    <header class="chart-heading">
+                        <h3>Memória RAM</h3>
+                        <p>Percentual de memória utilizada</p>
+                    </header>
+                    <div class="chart-container"><canvas id="chartRam" role="img" aria-label="Percentual de memória utilizada">Percentual de memória utilizada</canvas></div>
+                </article>
+                <article class="card chart-card">
+                    <header class="chart-heading">
+                        <h3>Uso de disco</h3>
+                        <p>Armazenamento</p>
+                    </header>
+                    <div class="chart-container"><canvas id="chartDisco" role="img" aria-label="Ocupação do armazenamento">Ocupação do armazenamento</canvas></div>
+                </article>
+                <article class="card chart-card">
+                    <header class="chart-heading">
+                        <h3>Tráfego de rede</h3>
+                        <p id="network-status">Velocidade em Mbps de recebimento e envio</p>
+                    </header>
+                    <div class="chart-container"><canvas id="chartRede" role="img" aria-label="Velocidade de download e upload da rede">Velocidade de download e upload da rede</canvas></div>
+                </article>
+            </section>
+            <aside class="alerts-panel" aria-labelledby="alerts-title">
+                <header class="alerts-heading">
+                    <div>
+                        <h3 id="alerts-title">Histórico de alertas</h3>
+                    </div>
+                    <span class="alerts-count" id="alerts-count" aria-label="Quantidade de alertas">—</span>
+                </header>
+                <p class="alerts-status" id="alerts-status" role="status"></p>
+                <div class="alerts-table-wrapper" tabindex="0" role="region" aria-label="Histórico de alertas registrados">
+                    <table class="alerts-table">
+                        <thead>
+                            <tr>
+                                <th scope="col">Componente</th>
+                                <th scope="col">Valor</th>
+                                <th scope="col">Limite</th>
+                                <th scope="col">Nível</th>
+                                <th scope="col">Data</th>
+                            </tr>
+                        </thead>
+                        <tbody id="alerts-body">
+                            <tr>
+                                <td colspan="5" class="alerts-empty">Aguardando dados do monitoramento.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </aside>
         </div>
     </main>
 
+    <script src="./config.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+            const nomeUrl = params.get('nome');
+            if (nomeUrl) {
+                sessionStorage.setItem('NOME_USUARIO', nomeUrl);
+            }
+
             const nomeSalvo = sessionStorage.getItem('NOME_USUARIO') || localStorage.getItem('NOME_USUARIO');
             if (nomeSalvo) {
                 document.getElementById('nomeAnalista').innerText = nomeSalvo;
@@ -130,5 +166,10 @@
         function logout() {
             sessionStorage.clear();
             localStorage.clear();
-            window.location.href = "login.html"
+            window.location.href = window.location.protocol + "//" + window.location.hostname + "/login.html";
         }
+    </script>
+    <script src="./monitoramento-graficos.js"></script>
+</body>
+
+</html>
