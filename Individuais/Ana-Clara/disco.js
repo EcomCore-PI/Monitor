@@ -70,7 +70,6 @@
                 const io = valor(d, 'disco_io_utilizacao_percent'), iops = valor(d, 'disco_iops'), latR = valor(d, 'disco_latencia_leitura_ms'), latW = valor(d, 'disco_latencia_escrita_ms'), read = valor(d, 'disco_leitura_mb_s'), write = valor(d, 'disco_escrita_mb_s');
                 put('percentual', `${fmt(percent, 1)}%`); put('livre', `${fmt(free)} GB`); put('ioUtilizacao', `${fmt(io, 1)}%`); put('iops', fmt(iops, 0));
                 put('estado', `Nível: ${percent >= 90 ? 'Crítico' : percent >= 80 ? 'Atenção' : 'Normal'}`);
-                put('mUsado', `${fmt(used)} GB`); put('mLivre', `${fmt(free)} GB`); put('mTotal', `${fmt(total)} GB`); put('mPercent', `${fmt(percent, 1)}%`); put('mIO', `${fmt(io, 1)}%`); put('mIOPS', fmt(iops, 1)); put('mLatRead', `${fmt(latR, 2)} ms`); put('mLatWrite', `${fmt(latW, 2)} ms`); put('mRead', `${fmt(read, 2)} MB/s`); put('mWrite', `${fmt(write, 2)} MB/s`);
                 historico.labels.splice(0, historico.labels.length, ...registros.map(r => r.horario || '--:--'));
                 historico.latRead.splice(0, historico.latRead.length, ...registros.map(r => valor(r, 'disco_latencia_leitura_ms')));
                 historico.latWrite.splice(0, historico.latWrite.length, ...registros.map(r => valor(r, 'disco_latencia_escrita_ms')));

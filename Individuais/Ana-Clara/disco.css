@@ -1,10 +1,56 @@
-.disco-layout { align-items: stretch; }
-.disco-charts { display:grid; grid-template-columns:1fr; gap:14px; min-width:0; }
-.disco-charts .chart-card { min-height:320px; display:flex; flex-direction:column; }
-.disco-charts .chart-container { height:260px; min-height:240px; }
-.right-column-stack { display:grid; grid-template-rows:minmax(0,1fr) minmax(0,.8fr); gap:14px; min-height:0; }
-.right-column-stack > .alerts-panel { min-height:250px; overflow:hidden; display:flex; flex-direction:column; }
-.right-column-stack .alerts-table-wrapper { flex:1; overflow-y:auto; }
-@media (min-width:1200px) { .disco-layout { grid-template-columns:minmax(0,1.65fr) minmax(330px,1fr); } }
-@media (max-width:900px) { .disco-layout { grid-template-columns:1fr; } .disco-charts .chart-card { min-height:290px; } }
-@media (max-width:600px) { .disco-charts .chart-container { height:230px; } }
+/* Layout compacto inspirado na dashboard de CPU: cards uniformes e gráficos empilhados */
+.disco-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.8fr) minmax(300px, 1fr);
+    gap: 16px;
+    align-items: stretch;
+}
+.disco-charts {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-width: 0;
+}
+.disco-charts .chart-card {
+    height: 300px;
+    min-height: 300px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+}
+.disco-charts .chart-heading h3 {
+    margin-bottom: 6px;
+}
+.disco-charts .chart-heading p {
+    margin-top: 0;
+}
+.disco-charts .chart-container {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    height: 0;
+}
+.disco-layout > .alerts-panel {
+    margin-top: 0;
+    min-height: 616px;
+    max-height: 616px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 16px;
+}
+.disco-layout > .alerts-panel .alerts-table-wrapper {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+}
+@media (max-width: 1050px) {
+    .disco-layout { grid-template-columns: 1fr; }
+    .disco-layout > .alerts-panel { position: static; min-height: 260px; max-height: 280px; }
+    .disco-charts .chart-card { height: 300px; min-height: 300px; }
+}
+@media (max-width: 600px) {
+    .disco-charts .chart-card { height: 270px; min-height: 270px; }
+    .disco-layout > .alerts-panel { min-height: 250px; max-height: 260px; }
+}
