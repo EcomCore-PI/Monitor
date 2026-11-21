@@ -420,7 +420,7 @@ def gravar_capturas(dados):
                 })
 
         conexao.commit()
-        return alertas_novos
+        return alertas_novos if slack_ativo else []
 
     except Exception:
         conexao.rollback()
