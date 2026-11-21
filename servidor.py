@@ -327,6 +327,18 @@ def enviar_slack(alerta):
     except Exception as erro:
         print(f"[ERRO] Falha ao enviar alerta ao Slack: {erro}")
 
+def slack_habilitado(cursor):
+    """Lê o status da tabela slack; mudar no banco vale sem reiniciar."""
+    try:
+        cursor.execute(
+            "SELECT status FROM slack WHERE fk_servidor = %s LIMIT 1",
+            (ID_SERVIDOR,),
+        )
+        linha = cursor.fetchone()
+    except mysql.connector.Error:
+        return True   
+    return True if linha is None else bool(linha["status"])
+
 
 def gravar_capturas(dados):
     conexao = mysql.connector.connect(**CONFIG_BANCO)
@@ -343,6 +355,7 @@ def gravar_capturas(dados):
 
         especificacoes = carregar_especificacoes(cursor)
         alertas_novos = []
+        slack_ativo = slack_habilitado(cursor)
 
         for tipo, campo in RECURSOS.items():
             if tipo not in especificacoes:
