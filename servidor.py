@@ -82,6 +82,28 @@ RECURSOS = {
 }
 RECURSOS_OBRIGATORIOS = {"CPU", "RAM", "Disco"}
 
+# ---------------------------------------------------------------------------
+# Tipo de monitoramento desta instância.
+# Cada instância coleta apenas o componente do TIPO_MONITOR:
+#   cpu | memoria | disco | rede | geral (todos; padrão se não definido)
+# Qualquer outro valor (painel, none, off) = somente painel web, sem coleta.
+# O valor pode vir do .env.dev ou das variáveis de ambiente do container (.env).
+# ---------------------------------------------------------------------------
+TIPO_MONITOR = (
+    ENV.get("TIPO_MONITOR") or os.environ.get("TIPO_MONITOR") or "geral"
+).strip().lower()
+TIPOS_POR_MONITOR = {
+    "cpu": {"CPU"},
+    "memoria": {"RAM"},
+    "ram": {"RAM"},
+    "disco": {"Disco"},
+    "rede": {"Rede Recebida", "Rede Enviada"},
+    "geral": set(RECURSOS),
+}
+RECURSOS_ATIVOS = TIPOS_POR_MONITOR.get(TIPO_MONITOR, set())
+RECURSOS_OBRIGATORIOS_ATIVOS = RECURSOS_OBRIGATORIOS & RECURSOS_ATIVOS
+COLETAR = COLETAR and bool(RECURSOS_ATIVOS)
+
 
 # ---------------------------------------------------------------------------
 # Coleta na máquina onde este programa está rodando
@@ -100,21 +122,26 @@ def coletar_metricas_rede_instancia():
 
 
 def coletar_dados():
-    cpu_percent = psutil.cpu_percent(interval=1)
-    memoria = psutil.virtual_memory()
-    caminho_disco = os.path.abspath(os.sep)
-    disco = psutil.disk_usage(caminho_disco)
-    rede = coletar_metricas_rede_instancia()
+    """Coleta somente os recursos do TIPO_MONITOR desta instância."""
+    dados = {}
 
-    return {
-        "cpu_percent": float(cpu_percent),
-        "memoria_percent": float(memoria.percent),
-        "disco_percent": float(disco.percent),
+    if "CPU" in RECURSOS_ATIVOS:
+        dados["cpu_percent"] = float(psutil.cpu_percent(interval=1))
+
+    if "RAM" in RECURSOS_ATIVOS:
+        dados["memoria_percent"] = float(psutil.virtual_memory().percent)
+
+    if "Disco" in RECURSOS_ATIVOS:
+        caminho_disco = os.path.abspath(os.sep)
+        dados["disco_percent"] = float(psutil.disk_usage(caminho_disco).percent)
+
+    if "Rede Recebida" in RECURSOS_ATIVOS or "Rede Enviada" in RECURSOS_ATIVOS:
         # Contadores de rede coletados pelo NetworkMonitor.java nesta instância.
-        "rede_recebida_mib": rede["bytes_recebidos"] / (1024 ** 2),
-        "rede_enviada_mib": rede["bytes_enviados"] / (1024 ** 2),
-        "metricas_rede": rede,
-    }
+        rede = coletar_metricas_rede_instancia()
+        dados["rede_recebida_mib"] = rede["bytes_recebidos"] / (1024 ** 2)
+        dados["rede_enviada_mib"] = rede["bytes_enviados"] / (1024 ** 2)
+
+    return dados
 
 
 # ---------------------------------------------------------------------------
@@ -290,7 +317,8 @@ def carregar_especificacoes(cursor):
             "limite_critico": float(linha["limite_critico"]),
         }
 
-    faltando = RECURSOS_OBRIGATORIOS - set(especificacoes)
+    # Só exige as especificações dos recursos que esta instância realmente coleta.
+    faltando = RECURSOS_OBRIGATORIOS_ATIVOS - set(especificacoes)
     if faltando:
         raise ValueError(
             "Especificações ausentes para: " + ", ".join(sorted(faltando))
@@ -327,6 +355,7 @@ def enviar_slack(alerta):
     except Exception as erro:
         print(f"[ERRO] Falha ao enviar alerta ao Slack: {erro}")
 
+
 def slack_habilitado(cursor):
     """Lê o status da tabela slack; mudar no banco vale sem reiniciar."""
     try:
@@ -336,7 +365,7 @@ def slack_habilitado(cursor):
         )
         linha = cursor.fetchone()
     except mysql.connector.Error:
-        return True   
+        return True  # tabela ausente: mantém o comportamento de enviar
     return True if linha is None else bool(linha["status"])
 
 
@@ -358,6 +387,9 @@ def gravar_capturas(dados):
         slack_ativo = slack_habilitado(cursor)
 
         for tipo, campo in RECURSOS.items():
+            # Esta instância só grava o componente do seu TIPO_MONITOR.
+            if tipo not in RECURSOS_ATIVOS:
+                continue
             if tipo not in especificacoes:
                 continue
             valor = dados.get(campo)
@@ -439,17 +471,17 @@ def loop_gravacao():
             for alerta in alertas_novos:
                 enviar_slack(alerta)
 
-            # Grava métricas detalhadas de CPU (Individuais/Marco)
-            gravar_metricas_cpu(CONFIG_BANCO, ID_SERVIDOR)
-            monitor_memoria.gravar_metricas_memoria(CONFIG_BANCO, ID_SERVIDOR)
-            monitor_disco.gravar_metricas_disco(CONFIG_BANCO, ID_SERVIDOR)
-            print(
-                f"[OK] CPU {dados['cpu_percent']:.1f}% | "
-                f"RAM {dados['memoria_percent']:.1f}% | "
-                f"Disco {dados['disco_percent']:.1f}% | "
-                f"Rede recebida {dados['rede_recebida_mib']:.3f} MiB | "
-                f"enviada {dados['rede_enviada_mib']:.3f} MiB gravados no banco."
-            )
+            # Métricas detalhadas de cada componente (módulos individuais),
+            # somente para o componente monitorado por esta instância.
+            if "CPU" in RECURSOS_ATIVOS:
+                gravar_metricas_cpu(CONFIG_BANCO, ID_SERVIDOR)
+            if "RAM" in RECURSOS_ATIVOS:
+                monitor_memoria.gravar_metricas_memoria(CONFIG_BANCO, ID_SERVIDOR)
+            if "Disco" in RECURSOS_ATIVOS:
+                monitor_disco.gravar_metricas_disco(CONFIG_BANCO, ID_SERVIDOR)
+
+            resumo = " | ".join(f"{chave}={valor:.2f}" for chave, valor in dados.items())
+            print(f"[OK] {TIPO_MONITOR} | {resumo} gravados no banco.")
         except Exception as erro:
             print(f"[ERRO] Não foi possível gravar a coleta: {erro}")
         time.sleep(INTERVALO_GRAVACAO)
@@ -462,7 +494,7 @@ def loop_gravacao_rede():
             metricas = coletar_metricas_rede_instancia()
             monitor_rede.gravar_metricas_rede(CONFIG_BANCO, ID_SERVIDOR, metricas)
         except Exception as erro:
-            print(f"[ERRO] NÃ£o foi possÃ­vel gravar mÃ©tricas de rede: {erro}")
+            print(f"[ERRO] Não foi possível gravar métricas de rede: {erro}")
         duracao_ciclo = time.monotonic() - inicio_ciclo
         time.sleep(max(0, INTERVALO_GRAVACAO_REDE - duracao_ciclo))
 
@@ -782,15 +814,21 @@ if __name__ == "__main__":
         f"Banco: {CONFIG_BANCO['host']}:{CONFIG_BANCO['port']} / "
         f"{CONFIG_BANCO['database']}"
     )
+    print(f"[MONITOR] TIPO_MONITOR={TIPO_MONITOR} | recursos coletados: "
+          f"{', '.join(sorted(RECURSOS_ATIVOS)) or 'nenhum'}")
     if COLETAR:
-        monitor_memoria.preparar_especificacoes_memoria(CONFIG_BANCO, ID_SERVIDOR)
-        monitor_disco.preparar_especificacoes_disco(CONFIG_BANCO, ID_SERVIDOR)
-        preparar_especificacoes()
-        monitor_rede.preparar_especificacoes_rede(CONFIG_BANCO, ID_SERVIDOR)
+        if "RAM" in RECURSOS_ATIVOS:
+            monitor_memoria.preparar_especificacoes_memoria(CONFIG_BANCO, ID_SERVIDOR)
+        if "Disco" in RECURSOS_ATIVOS:
+            monitor_disco.preparar_especificacoes_disco(CONFIG_BANCO, ID_SERVIDOR)
+        if "CPU" in RECURSOS_ATIVOS or "Rede Recebida" in RECURSOS_ATIVOS:
+            preparar_especificacoes()
+        if "Rede Recebida" in RECURSOS_ATIVOS or "Rede Enviada" in RECURSOS_ATIVOS:
+            monitor_rede.preparar_especificacoes_rede(CONFIG_BANCO, ID_SERVIDOR)
+            threading.Thread(target=loop_gravacao_rede, daemon=True).start()
         threading.Thread(target=loop_gravacao, daemon=True).start()
-        threading.Thread(target=loop_gravacao_rede, daemon=True).start()
     else:
-        print("Coleta desativada nesta instância (COLETAR_METRICAS=false).")
+        print("Coleta desativada nesta instância (somente painel web).")
     servidor = ThreadingHTTPServer(("0.0.0.0", 8000), Servidor)
     print("Dashboard e API disponíveis na porta 8000.")
     servidor.serve_forever()
