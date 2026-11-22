@@ -1,0 +1,293 @@
+:root {
+  /* Paleta oficial da EcomCore (igual ao index.css) */
+  --azul-marinho: #13263A;
+  --azul: #00458F;
+  --azul-petroleo: #00458F;
+  --verde-agua: #C2CE75;
+  --azul-aco: #13263A;
+  --vinho: #8F0A00;
+  --amarelo-neon: #DEFF00;
+  --branco: #DBE3EE;
+
+  /* Cores de apoio */
+  --fundo-claro: #F2F5FA;
+  --linha-clara: #00458F;
+  --texto-no-escuro: #D9E2F3;
+  --linha-escura: #34506B;
+  --amarelo-alerta: #FF8980;
+}
+
+* {
+  box-sizing: border-box;
+  scroll-behavior: smooth;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: 'Plus Jakarta Sans', 'Segoe UI', Tahoma, Arial, sans-serif;
+  line-height: 1.6;
+  color: var(--azul-aco);
+  background-color: var(--branco);
+}
+
+h1, h2, h3, h4, p {
+  margin: 0;
+}
+
+ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+a:focus-visible,
+button:focus-visible {
+  outline: 3px solid var(--verde-agua);
+  outline-offset: 3px;
+}
+
+:root {
+  --altura-cabecalho: 76px;
+
+  --logo-altura: 150px;
+}
+
+.cabecalho {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: var(--azul-marinho);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+}
+
+.cabecalho-conteudo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 92%;
+  max-width: 1195px;
+  height: var(--altura-cabecalho);
+  margin: 0 auto;
+}
+
+.logo-cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo-cabecalho img {
+  display: block;
+  height: var(--logo-altura);
+  width: auto;
+}
+
+.menu {
+  display: flex;
+  gap: 28px;
+}
+
+.menu-link {
+  padding: 6px 0;
+  border-bottom: 2px solid transparent;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--texto-no-escuro);
+}
+
+.menu-link:hover,
+.menu-link-ativo {
+  color: var(--branco);
+  border-bottom-color: var(--verde-agua);
+}
+
+/* Botão "Voltar" */
+.botao {
+  display: inline-block;
+  padding: 12px 24px;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.botao-claro {
+  background-color: var(--branco);
+  color: var(--azul-marinho);
+}
+
+.botao-claro:hover {
+  background-color: #DBE8F7;
+}
+
+.botao-login {
+  padding: 9px 22px;
+  font-size: 14px;
+}
+
+.background-login {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100svh;
+
+  background-image:
+    linear-gradient(90deg, rgba(19, 38, 58, 0.55) 35%, rgba(0, 69, 143, 0.78)),
+    url('../assets/imgs/carrinho_neon.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.login {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 0;
+}
+
+.login-container {
+  display: flex;
+  justify-content: center;
+  width: 92%;
+}
+
+.card-login {
+  width: 100%;
+  max-width: 420px;
+  padding: 40px;
+  text-align: center;
+  color: var(--azul-aco);
+  background-color: var(--fundo-claro);
+  border-radius: 16px;
+  box-shadow: 0 24px 60px rgba(0, 17, 143, 0.5);
+}
+
+.card-login h2 {
+  margin-bottom: 6px;
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1.2;
+  color: var(--azul-marinho);
+}
+
+.subtitulo {
+  margin-bottom: 28px;
+  font-size: 14px;
+  color: var(--linha-escura);
+}
+
+/* ---------- Formulário ---------- */
+.campo {
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.titulo_input {
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--azul-marinho);
+}
+
+.campo input {
+  width: 100%;
+  padding: 12px 15px;
+  font-family: inherit;
+  font-size: 15px;
+  color: var(--azul-marinho);
+  background-color: #FFFFFF;
+  border: 1px solid var(--linha-escura);
+  border-radius: 8px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.campo input::placeholder {
+  color: #7B8DA3;
+}
+
+.campo input:focus {
+  border-color: var(--azul);
+  box-shadow: 0 0 0 3px rgba(0, 69, 143, 0.25);
+}
+
+.botao-entrar {
+  width: 100%;
+  margin-top: 10px;
+  padding: 14px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--branco);
+  background-color: var(--azul);
+  border: 2px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.botao-entrar:hover {
+  background-color: var(--azul-marinho);
+}
+
+.link-recuperacao {
+  display: inline-block;
+  margin-top: 18px;
+  color: var(--azul);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.alerta_erro {
+  display: flex;
+  justify-content: center;
+  width: 92%;
+  margin-bottom: 16px;
+}
+
+.card_erro {
+  display: none; 
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--branco);
+  background-color: var(--vinho);
+  border-radius: 8px;
+}
+
+.loading-div {
+  margin-top: 20px;
+}
+
+.loading-div img {
+  width: 40px;
+  margin: 0 auto;
+}
+
+/* ---------- Celular ---------- */
+@media (max-width: 480px) {
+  .card-login {
+    padding: 28px 22px;
+  }
+}

@@ -1,0 +1,235 @@
+
+/* =========================================
+   ECOMCORE - DASHBOARD CPU
+   Ambiente de Homologação
+   ========================================= */
+
+/* Organização geral */
+
+.monitoring-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+    gap: 16px;
+    align-items: stretch;
+    min-height: 350px;
+}
+
+/* Área dos dois gráficos */
+
+.dashboard-grid-cpu {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    min-width: 0;
+    min-height: 0;
+}
+
+/* Cards dos gráficos */
+
+.dashboard-grid-cpu .chart-card {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 350px;
+    padding: 18px;
+    border-radius: 14px;
+    background: linear-gradient(145deg, #1b293e, #172235);
+    border: 1px solid #304158;
+}
+
+/* Cabeçalho dos gráficos */
+
+.dashboard-grid-cpu .chart-heading {
+    margin-bottom: 16px;
+    flex-shrink: 0;
+}
+
+.dashboard-grid-cpu .chart-heading h3 {
+    color: #f1f5f9;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.dashboard-grid-cpu .chart-heading p {
+    margin-top: 6px;
+    color: #a8b8cd;
+    font-size: 0.8rem;
+    line-height: 1.5;
+}
+
+/* Área interna dos gráficos */
+
+.dashboard-grid-cpu .chart-container {
+    position: relative;
+    flex: 1;
+    width: 100%;
+    min-height: 220px;
+    height: auto;
+}
+
+/* Placeholder visual de homologação */
+
+.dashboard-grid-cpu .grafico-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    width: 100%;
+    height: 100%;
+    min-height: 220px;
+    padding: 24px;
+    text-align: center;
+    background: rgba(15, 23, 42, 0.25);
+    border: 1px dashed rgba(148, 163, 184, 0.2);
+    border-radius: 10px;
+}
+
+.dashboard-grid-cpu .grafico-placeholder .icone {
+    font-size: 1.8rem;
+    color: #64748b;
+}
+
+.dashboard-grid-cpu .grafico-placeholder strong {
+    color: #cbd5e1;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.dashboard-grid-cpu .grafico-placeholder p {
+    color: #94a3b8;
+    font-size: 0.8rem;
+    line-height: 1.5;
+}
+
+/* Painel de alertas */
+
+.monitoring-layout .alerts-panel {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 350px;
+    height: 100%;
+    padding: 18px;
+    border-radius: 14px;
+    background: linear-gradient(145deg, #1b293e, #172235);
+    border: 1px solid #304158;
+}
+
+/* Cabeçalho dos alertas */
+
+.monitoring-layout .alerts-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.monitoring-layout .alerts-heading h3 {
+    color: #f1f5f9;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.monitoring-layout .alerts-heading p {
+    margin-top: 6px;
+    color: #a8b8cd;
+    font-size: 0.8rem;
+}
+
+/* Tabela */
+
+.monitoring-layout .alerts-table-wrapper {
+    flex: 1;
+    min-height: 0;
+    overflow-x: auto;
+    overflow-y: auto;
+}
+
+.monitoring-layout .alerts-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+}
+
+.monitoring-layout .alerts-table th {
+    padding: 13px 10px;
+    color: #94a3b8;
+    font-weight: 500;
+    text-align: left;
+    border-bottom: 1px solid #304158;
+}
+
+.monitoring-layout .alerts-table td {
+    padding: 14px 10px;
+    color: #e2e8f0;
+    border-bottom: 1px solid #304158;
+}
+
+.monitoring-layout .alerts-table .alerts-empty {
+    padding: 35px 16px;
+    text-align: center;
+    color: #94a3b8;
+    line-height: 1.6;
+}
+
+/* Espaçamento auxiliar */
+
+.table-spaced {
+    margin-top: 12px;
+}
+
+/* =========================================
+   RESPONSIVIDADE
+   ========================================= */
+
+@media (max-width: 1400px) {
+    .monitoring-layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .dashboard-grid-cpu {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .monitoring-layout .alerts-panel {
+        min-height: 240px;
+    }
+}
+
+@media (max-width: 900px) {
+    .dashboard-grid-cpu {
+        grid-template-columns: 1fr;
+    }
+
+    .dashboard-grid-cpu .chart-card {
+        min-height: 300px;
+    }
+
+    .dashboard-grid-cpu .chart-container {
+        min-height: 200px;
+    }
+}
+
+@media (max-width: 600px) {
+    .monitoring-layout {
+        gap: 14px;
+    }
+
+    .dashboard-grid-cpu {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+
+    .dashboard-grid-cpu .chart-card,
+    .monitoring-layout .alerts-panel {
+        padding: 14px;
+        min-height: 260px;
+    }
+
+    .dashboard-grid-cpu .grafico-placeholder {
+        min-height: 180px;
+        padding: 16px;
+    }
+}

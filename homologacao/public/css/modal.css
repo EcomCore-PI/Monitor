@@ -1,0 +1,72 @@
+#modalSenha {
+    width: min(92vw, 420px);
+    padding: 30px 40px;
+    border: none;
+    border-radius: 16px;
+    background: #d9d9f7;
+    color: #0a0a1a;
+    box-shadow: 0 12px 40px rgba(10, 10, 26, 0.35);
+}
+
+#modalSenha::backdrop {
+    background: rgba(10, 10, 26, 0.55);
+}
+
+#modalSenha h3 {
+    margin: 0 0 6px;
+    text-align: center;
+    font-size: 22px;
+}
+
+#modalSenha .modal-sub {
+    margin: 0 0 8px;
+    text-align: center;
+    font-size: 14px;
+}
+
+#modalSenha input:focus {
+    outline: 2px solid #2f4bff;
+}
+
+#modalSenha .modal-erro {
+    min-height: 20px;
+    margin: 14px 0 0;
+    font-size: 13px;
+    font-weight: bold;
+    color: #c62828;
+}
+
+#modalSenha .modal-acoes {
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+    margin-top: 18px;
+}
+
+#modalSenha .modal-acoes button {
+    padding: 12px 30px;
+    border: none;
+    border-radius: 22px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+#modalSenha .modal-acoes button[type="submit"] {
+    background: #2f4bff;
+    color: #fff;
+}
+
+#modalSenha .modal-acoes button[type="submit"]:hover {
+    background: #243bd4;
+}
+
+#modalSenha .modal-acoes button[type="button"] {
+    background: none;
+    color: #0a0a1a;
+}
+
+#modalSenha .modal-acoes button[type="button"]:hover {
+    text-decoration: underline;
+}

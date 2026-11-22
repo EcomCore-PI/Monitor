@@ -1,0 +1,119 @@
+.dashboard-grid-cpu {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  min-width: 0;
+}
+
+.table-spaced {
+  margin-top: 12px;
+}
+
+.right-column-stack {
+  display: grid;
+  grid-template-rows: minmax(0, 1.15fr) minmax(0, 0.85fr);
+  gap: 14px;
+  min-height: 0;
+}
+
+/* Mantém Alertas recentes no topo, alinhado ao início do gráfico. */
+.right-column-stack > .alerts-panel:last-child {
+  grid-row: 1;
+}
+
+.right-column-stack > .alerts-panel:first-child {
+  grid-row: 2;
+}
+
+.right-column-stack > .alerts-panel {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.monitoring-layout .alerts-panel {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.monitoring-layout .alerts-table-wrapper {
+  flex: 1 1 auto;
+  overflow-y: auto;
+}
+
+.memoria-layout {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: stretch;
+    gap: 16px;
+}
+
+.memoria-layout .dashboard-grid-cpu {
+    display: block;
+    width: auto;
+    min-width: 0;
+}
+
+.memoria-layout .right-column-stack {
+    display: block;
+    width: auto;
+    min-width: 0;
+    min-height: 0;
+}
+
+.memoria-layout .alerts-panel {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+}
+
+.memoria-layout .chart-card,
+.memoria-layout .alerts-panel {
+    height: 100%;
+}
+
+.memoria-layout .chart-container {
+    height: 280px;
+}
+
+@media (max-width: 1100px) {
+    .memoria-layout {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 650px) {
+    .memoria-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .memoria-layout .chart-container {
+        height: 240px;
+    }
+}
+
+@media (min-width: 1200px) and (min-height: 700px) {
+  .dashboard-grid-cpu {
+    grid-template-rows: minmax(0, 1fr);
+    min-height: 0;
+  }
+
+  .dashboard-grid-cpu .chart-card {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .dashboard-grid-cpu .chart-container {
+    flex: 1 1 0;
+    height: 0;
+    min-height: 0;
+  }
+}
+
+@media (max-width: 600px) {
+  .dashboard-grid-cpu {
+    grid-template-columns: 1fr;
+  }
+}

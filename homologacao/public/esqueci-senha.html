@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redefinir senha - EcomCore</title>
+    <link rel="icon" href="./assets/imgs/favcore1.png">
+    <link rel="stylesheet" href="./css/login.css">
+</head>
+<body>
+    <div class="background-login">
+        <header class="cabecalho"><div class="cabecalho-conteudo">
+            <a class="logo-cabecalho" href="index.html"><img src="./assets/imgs/EcomCoresemfundo.png" alt="Logo EcomCore"></a>
+            <a class="botao botao-claro botao-login" href="login.html">Voltar ao login</a>
+        </div></header>
+        <main class="login"><div class="login-container"><section class="card card-login">
+            <h2>Recuperar acesso</h2>
+            <p class="subtitulo">Informe o email cadastrado. Enviaremos um link para definir uma nova senha.</p>
+            <form id="formEmail" class="formulario">
+                <div class="campo"><h4 class="titulo_input">E-mail</h4><input id="email" type="email" autocomplete="email" required></div>
+                <button class="botao-entrar" type="submit">Enviar link</button>
+            </form>
+            <p id="mensagem" role="status" style="margin-top:16px"></p>
+        </section></div></main>
+    </div>
+    <script>
+        document.getElementById("formEmail").addEventListener("submit", async function (evento) {
+            evento.preventDefault();
+            const mensagem = document.getElementById("mensagem");
+            try {
+                const resposta = await fetch("/usuarios/solicitar-redefinicao", {
+                    method: "POST", headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email: document.getElementById("email").value })
+                });
+                const corpo = (resposta.headers.get("content-type") || "").includes("application/json")
+                    ? await resposta.json() : await resposta.text();
+                mensagem.textContent = typeof corpo === "string" ? corpo : corpo.mensagem;
+            } catch (_) {
+                mensagem.textContent = "Não foi possível conectar ao servidor. Tente novamente.";
+            }
+        });
+    </script>
+</body>
+</html>

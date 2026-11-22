@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Definir senha - EcomCore</title>
+    <link rel="icon" href="./assets/imgs/favcore1.png">
+    <link rel="stylesheet" href="./css/login.css">
+</head>
+<body>
+    <div class="background-login">
+        <header class="cabecalho"><div class="cabecalho-conteudo">
+            <a class="logo-cabecalho" href="index.html"><img src="./assets/imgs/EcomCoresemfundo.png" alt="Logo EcomCore"></a>
+            <a class="botao botao-claro botao-login" href="login.html">Voltar ao login</a>
+        </div></header>
+        <main class="login"><div class="login-container"><section class="card card-login">
+            <h2>Defina sua senha</h2>
+            <p class="subtitulo">Crie uma senha com pelo menos 8 caracteres para acessar a EcomCore.</p>
+            <form id="formSenha" class="formulario">
+                <div class="campo"><h4 class="titulo_input">Nova senha</h4><input id="senha" type="password" minlength="8" autocomplete="new-password" required></div>
+                <div class="campo"><h4 class="titulo_input">Confirme a senha</h4><input id="confirmacao" type="password" minlength="8" autocomplete="new-password" required></div>
+                <button class="botao-entrar" type="submit">Salvar senha</button>
+            </form>
+            <p id="mensagem" role="status" style="margin-top:16px"></p>
+        </section></div></main>
+    </div>
+    <script>
+        const form = document.getElementById("formSenha");
+        const mensagem = document.getElementById("mensagem");
+        form.addEventListener("submit", async function (evento) {
+            evento.preventDefault();
+            const senha = document.getElementById("senha").value;
+            if (senha !== document.getElementById("confirmacao").value) {
+                mensagem.textContent = "As senhas não são iguais.";
+                return;
+            }
+            const resposta = await fetch("/usuarios/definir-senha", {
+                method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ token: new URLSearchParams(location.search).get("token"), senha })
+            });
+            const corpo = (resposta.headers.get("content-type") || "").includes("application/json")
+                ? await resposta.json() : await resposta.text();
+            mensagem.textContent = typeof corpo === "string" ? corpo : corpo.mensagem;
+            if (resposta.ok) {
+                form.reset();
+                setTimeout(() => location.assign("login.html"), 1800);
+            }
+        });
+    </script>
+</body>
+</html>

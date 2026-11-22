@@ -1,0 +1,339 @@
+
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcomCore - Monitoramento de CPU | Homologação</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="./assets/imgs/EcomCore.png">
+    <link rel="stylesheet" href="./dashboard.css">
+    <link rel="stylesheet" href="./css/cpu.css">
+
+    <style>
+        .sidebar {
+            justify-content: flex-start;
+            gap: 0;
+            padding: 18px 14px;
+            overflow-y: auto;
+        }
+
+        .brand {
+            margin-bottom: 14px;
+        }
+
+        .brand-logo {
+            max-width: 180px;
+            max-height: 95px;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+        }
+
+        .user-profile {
+            padding: 12px;
+            margin-bottom: 18px;
+        }
+
+        .nav-menu {
+            gap: 4px;
+        }
+
+        .nav-item {
+            padding: 10px 14px;
+            gap: 10px;
+            font-size: 0.88rem;
+        }
+
+        .sidebar-actions {
+            margin-top: 18px;
+            gap: 8px;
+        }
+
+        .btn-support,
+        .btn-logout {
+            padding: 10px;
+        }
+
+        .homologacao-aviso {
+            margin-bottom: 18px;
+            padding: 12px 16px;
+            border: 1px solid rgba(56, 189, 248, 0.25);
+            border-radius: 10px;
+            background: rgba(56, 189, 248, 0.07);
+            color: #93c5fd;
+            font-size: 0.85rem;
+            line-height: 1.5;
+        }
+
+        .chart-container {
+            position: relative;
+        }
+
+        .grafico-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            min-height: 180px;
+            gap: 12px;
+            padding: 20px;
+            text-align: center;
+            color: #94a3b8;
+            border: 1px dashed rgba(148, 163, 184, 0.2);
+            border-radius: 10px;
+            background: rgba(15, 23, 42, 0.25);
+        }
+
+        .grafico-placeholder strong {
+            color: #cbd5e1;
+            font-size: 0.9rem;
+        }
+
+        .grafico-placeholder p {
+            font-size: 0.8rem;
+            line-height: 1.5;
+        }
+
+        .grafico-placeholder .icone {
+            font-size: 1.8rem;
+            opacity: 0.7;
+        }
+
+        .kpi-value {
+            color: #f8fafc;
+        }
+
+        .alerts-empty {
+            text-align: center;
+            color: #94a3b8;
+            padding: 28px 12px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <aside class="sidebar">
+        <div>
+            <div class="brand">
+                <img src="./assets/imgs/EcomCoresemfundo.png"
+                     alt="Logo EcomCore"
+                     class="brand-logo">
+            </div>
+
+            <div class="user-profile">
+                <div class="welcome-text">Bem-vindo de volta,</div>
+                <div class="user-name" id="nomeAnalista">EcomCore</div>
+            </div>
+
+            <ul class="nav-menu">
+                <li class="nav-item" onclick="window.location.href='./index.html'">
+                    <span>Dashboard</span>
+                </li>
+
+                <li class="nav-item active" onclick="window.location.href='./cpu.html'">
+                    <span>CPU</span>
+                </li>
+
+                <li class="nav-item" onclick="window.location.href='./memoria.html'">
+                    <span>Memória RAM</span>
+                </li>
+
+                <li class="nav-item" onclick="window.location.href='./disco.html'">
+                    <span>Disco</span>
+                </li>
+
+                <li class="nav-item" onclick="window.location.href='./rede.html'">
+                    <span>Rede</span>
+                </li>
+
+                <li class="nav-item" onclick="window.location.href='./finops.html'">
+                    <span>FinOps</span>
+                </li>
+            </ul>
+        </div>
+
+        <div class="sidebar-actions">
+            <a class="btn-support"
+               href="https://magna-sync.atlassian.net/jira/software/projects/SCRUM/form/1?atlOrigin=eyJpIjoiNmY4MzZjZTk2MTY4NDk3Zjk1YzEwZmEwZWY2NGFkNjIiLCJwIjoiaiJ9"
+               target="_blank"
+               rel="noopener noreferrer">
+                <span>Suporte</span>
+            </a>
+
+            <button class="btn-logout" onclick="logout()">
+                <span>Sair</span>
+            </button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+
+        <header class="header">
+            <h2 id="tituloServidorCpu">Monitoramento de CPU · Servidor 5</h2>
+            <p>Visão detalhada do processamento no ambiente de homologação.</p>
+        </header>
+
+        <div class="homologacao-aviso">
+            Ambiente de homologação — esta dashboard apresenta apenas a
+            estrutura visual do monitoramento de CPU. A coleta e a exibição
+            de métricas não estão habilitadas nesta página.
+        </div>
+
+        <section class="kpi-grid" aria-label="Indicadores de CPU">
+
+            <article class="kpi-card">
+                <p class="kpi-label">Uso Total de CPU</p>
+                <p class="kpi-value" id="kpiCpuTotal">--%</p>
+                <p class="kpi-description" id="kpiCpuStatus">Nível: Indisponível</p>
+                <p class="kpi-detail" id="kpiCpuPico">
+                    User: --% · System: --%
+                </p>
+            </article>
+
+            <article class="kpi-card">
+                <p class="kpi-label">Load Average (1 min)</p>
+                <p class="kpi-value" id="kpiLoad1Min">--</p>
+                <p class="kpi-description" id="kpiQtdNucleos">
+                    Núcleos não consultados
+                </p>
+                <p class="kpi-detail">
+                    Fila de execução do sistema
+                </p>
+            </article>
+
+            <article class="kpi-card">
+                <p class="kpi-label">Steal Time</p>
+                <p class="kpi-value" id="kpiCpuSteal">--%</p>
+                <p class="kpi-description">
+                    Tempo cedido ao host
+                </p>
+                <p class="kpi-detail">
+                    Contenção de hipervisor
+                </p>
+            </article>
+
+            <article class="kpi-card">
+                <p class="kpi-label">I/O Wait</p>
+                <p class="kpi-value" id="kpiCpuIowait">--%</p>
+                <p class="kpi-description">
+                    Espera por disco
+                </p>
+                <p class="kpi-detail">
+                    Gargalo de entrada/saída
+                </p>
+            </article>
+
+        </section>
+
+        <p class="metrics-status" id="statusAtualizacao" role="status">
+            Ambiente de homologação — indicadores de CPU não habilitados.
+        </p>
+
+        <div class="monitoring-layout">
+
+            <section class="dashboard-grid-cpu" aria-label="Gráficos de CPU">
+
+                <article class="card chart-card">
+                    <header class="chart-heading">
+                        <h3>Uso total de CPU</h3>
+                        <p>Histórico recente, com limite de atenção em 70%</p>
+                    </header>
+
+                    <div class="chart-container">
+                        <div class="grafico-placeholder">
+                            <span class="icone">▥</span>
+                            <strong>Histórico de utilização da CPU</strong>
+                            <p>
+                                Área reservada para o gráfico de evolução
+                                do processamento.
+                            </p>
+                            <p>Dados não disponíveis nesta página.</p>
+                        </div>
+                    </div>
+                </article>
+
+                <article class="card chart-card">
+                    <header class="chart-heading">
+                        <h3>Uso por núcleo</h3>
+                        <p>Distribuição individual dos núcleos lógicos</p>
+                    </header>
+
+                    <div class="chart-container">
+                        <div class="grafico-placeholder">
+                            <span class="icone">▥</span>
+                            <strong>Distribuição por núcleo</strong>
+                            <p>
+                                Área reservada para o gráfico de utilização
+                                dos núcleos da CPU.
+                            </p>
+                            <p>Dados não disponíveis nesta página.</p>
+                        </div>
+                    </div>
+                </article>
+
+            </section>
+
+            <aside class="alerts-panel" aria-labelledby="alerts-cpu-title">
+
+                <header class="alerts-heading">
+                    <div>
+                        <h3 id="alerts-cpu-title">Alertas recentes</h3>
+                        <p>Últimos eventos de CPU</p>
+                    </div>
+
+                    <span class="alerts-count" id="contadorAlertas">—</span>
+                </header>
+
+                <div class="alerts-table-wrapper table-spaced">
+                    <table class="alerts-table">
+                        <thead>
+                            <tr>
+                                <th scope="col">Horário</th>
+                                <th scope="col">Nível</th>
+                                <th scope="col">Valor</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="tabelaAlertasCpu">
+                            <tr>
+                                <td colspan="3" class="alerts-empty">
+                                    Monitoramento de alertas não habilitado
+                                    neste ambiente de demonstração.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+            </aside>
+
+        </div>
+
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const nomeSalvo =
+                sessionStorage.getItem('NOME_USUARIO') ||
+                localStorage.getItem('NOME_USUARIO');
+
+            if (nomeSalvo) {
+                document.getElementById('nomeAnalista').textContent = nomeSalvo;
+            }
+        });
+
+        function logout() {
+            sessionStorage.clear();
+            localStorage.clear();
+            window.location.href = './login.html';
+        }
+    </script>
+
+</body>
+</html>

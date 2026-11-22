@@ -1,0 +1,144 @@
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>EcomCore - FinOps AWS</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="./imgs/favcore1.png">
+    <link rel="stylesheet" href="./dashboard.css">
+    <link rel="stylesheet" href="./css/finops.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="./js/finops.js" defer></script>
+</head>
+
+<body>
+    <aside class="sidebar">
+        <div>
+            <div class="brand">
+                <img src="./assets/imgs/EcomCoresemfundo.png"
+                     alt="Logo EcomCore"
+                     class="brand-logo">
+            </div>
+            <div class="user-profile">
+                <div class="welcome-text">Bem-vindo de volta,</div>
+                <div class="user-name">EcomCore</div>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item" onclick="location.href='./index.html'">
+                    <span>Dashboard</span>
+                </li>
+
+                <li class="nav-item" onclick="location.href='./cpu.html'">
+                    <span>CPU</span>
+                </li>
+                <li class="nav-item" onclick="location.href='./memoria.html'">
+                    <span>Memória RAM</span>
+                </li>
+                <li class="nav-item" onclick="location.href='./Dashboard/Ana-Clara/disco.html'">
+                    <span>Disco</span>
+                </li>
+                <li class="nav-item" onclick="location.href='./Dashboard/Matheus/rede.html'">
+                    <span>Rede</span>
+                </li>
+                <li class="nav-item active">
+                    <span>FinOps</span>
+                </li>
+            </ul>
+        </div>
+        <div class="sidebar-actions">
+            <a class="btn-support"
+               href="https://magna-sync.atlassian.net/jira/software/projects/SCRUM/form/1?atlOrigin=eyJpIjoiNmY4MzZjZTk2MTY4NDk3Zjk1YzEwZmEwZWY2NGFkNjIiLCJwIjoiaiJ9">
+                <span>Suporte</span>
+            </a>
+            <button class="btn-logout"
+                    onclick="sessionStorage.clear(); localStorage.clear(); location.href='./login.html'">
+                <span>Sair</span>
+            </button>
+        </div>
+    </aside>
+    <main class="main-content finops-content">
+        <header class="header">
+            <h2>Gestão Financeira da Infraestrutura · FinOps</h2>
+            <p>
+                Análise de custos estimados AWS e utilização
+                dos recursos monitorados no ambiente de homologação.
+            </p>
+        </header>
+        <section class="kpi-grid" aria-label="Indicadores FinOps">
+            <article class="kpi-card">
+                <p class="kpi-label">Custo AWS projetado</p>
+                <p class="kpi-value" id="kpiCustoTotal">—</p>
+                <p class="kpi-description">
+                    Estimativa mensal da infraestrutura
+                </p>
+            </article>
+            <article class="kpi-card">
+                <p class="kpi-label">Variação da ociosidade</p>
+                <p class="kpi-value" id="kpiVariacao">—</p>
+                <p class="kpi-description">
+                    Últimos 30 min vs. 30 min anteriores
+                </p>
+            </article>
+            <article class="kpi-card">
+                <p class="kpi-label">Custo da ociosidade</p>
+                <p class="kpi-value" id="kpiCustoServidor">—</p>
+                <p class="kpi-description">
+                    Estimativa mensal por servidor
+                </p>
+            </article>
+            <article class="kpi-card">
+                <p class="kpi-label">Aproveitamento da CPU</p>
+                <p class="kpi-value" id="kpiEficiencia">—</p>
+                <p class="kpi-description">
+                    Indicador de aproveitamento dos recursos
+                </p>
+            </article>
+
+        </section>
+        <p class="metrics-status" id="statusFinops" role="status">
+            Aguardando dados financeiros da infraestrutura...
+        </p>
+        <section class="finops-graficos">
+            <article class="card chart-card">
+                <header class="chart-heading">
+                    <h3>Evolução dos custos AWS</h3>
+                    <p>
+                        Histórico e projeção de custos
+                        da infraestrutura
+                    </p>
+                </header>
+                <div class="chart-container">
+                    <canvas id="graficoEvolucao"
+                            role="img"
+                            aria-label="Evolução dos custos AWS">
+                    </canvas>
+                </div>
+            </article>
+            <article class="card chart-card">
+                <header class="chart-heading">
+                    <h3>Custo estimado por componente</h3>
+                    <p>
+                        Rateio interno estimado entre CPU,
+                        memória, disco e rede
+                    </p>
+                </header>
+                <div class="chart-container">
+                    <canvas id="graficoComponentes"
+                            role="img"
+                            aria-label="Distribuição estimada de custos por componente">
+                    </canvas>
+                </div>
+            </article>
+        </section>
+        <p class="finops-observacao">
+            Valores financeiros estimados a partir de tarifas públicas AWS.
+            O rateio por componente é uma metodologia interna,
+            não uma cobrança individual da AWS.
+        </p>
+    </main>
+</body>
+</html>

@@ -1,0 +1,516 @@
+
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>EcomCore - Monitoramento de Memória RAM</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="./assets/imgs/EcomCore.png">
+    <link rel="stylesheet" href="./dashboard.css">
+    <link rel="stylesheet" href="./css/memoria.css">
+
+    <style>
+        /* Sidebar padronizada */
+
+        .sidebar {
+            justify-content: flex-start;
+            gap: 0;
+            padding: 18px 14px;
+            overflow-y: auto;
+        }
+
+        .brand {
+            margin-bottom: 14px;
+            padding: 0 8px;
+        }
+
+        .brand-logo {
+            max-width: 180px;
+            max-height: 95px;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+        }
+
+        .user-profile {
+            padding: 12px;
+            margin-bottom: 18px;
+        }
+
+        .nav-menu {
+            gap: 4px;
+        }
+
+        .nav-item {
+            padding: 10px 14px;
+            gap: 10px;
+            font-size: 0.88rem;
+        }
+
+        .sidebar-actions {
+            margin-top: 18px;
+            gap: 8px;
+        }
+
+        .btn-support,
+        .btn-logout {
+            padding: 10px;
+        }
+
+        /* Aviso de homologação */
+
+        .homologacao-aviso {
+            margin-bottom: 18px;
+            padding: 12px 16px;
+            border: 1px solid rgba(56, 189, 248, 0.25);
+            border-radius: 10px;
+            background: rgba(56, 189, 248, 0.07);
+            color: #93c5fd;
+            font-size: 0.85rem;
+            line-height: 1.5;
+        }
+
+        /* Layout dos gráficos e alertas */
+
+        .memoria-layout {
+            display: grid;
+            grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+            gap: 16px;
+            align-items: stretch;
+            min-height: 350px;
+        }
+
+        .memoria-graficos {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+            min-width: 0;
+        }
+
+        .memoria-graficos .chart-card {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            min-height: 350px;
+            padding: 18px;
+            border-radius: 14px;
+            background: linear-gradient(145deg, #1b293e, #172235);
+            border: 1px solid #304158;
+        }
+
+        .memoria-graficos .chart-heading {
+            margin-bottom: 16px;
+        }
+
+        .memoria-graficos .chart-heading h3 {
+            color: #f1f5f9;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .memoria-graficos .chart-heading p {
+            margin-top: 6px;
+            color: #a8b8cd;
+            font-size: 0.8rem;
+            line-height: 1.5;
+        }
+
+        .memoria-graficos .chart-container {
+            display: flex;
+            flex: 1;
+            min-height: 220px;
+            height: auto;
+            width: 100%;
+        }
+
+        /* Espaços reservados para gráficos */
+
+        .grafico-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            width: 100%;
+            min-height: 220px;
+            padding: 24px;
+            text-align: center;
+            background: rgba(15, 23, 42, 0.25);
+            border: 1px dashed rgba(148, 163, 184, 0.2);
+            border-radius: 10px;
+        }
+
+        .grafico-placeholder .icone {
+            font-size: 1.8rem;
+            color: #64748b;
+        }
+
+        .grafico-placeholder strong {
+            color: #cbd5e1;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .grafico-placeholder p {
+            color: #94a3b8;
+            font-size: 0.8rem;
+            line-height: 1.5;
+        }
+
+        /* Alertas */
+
+        .memoria-layout .alerts-panel {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            min-height: 350px;
+            height: 100%;
+            padding: 18px;
+            border-radius: 14px;
+            background: linear-gradient(145deg, #1b293e, #172235);
+            border: 1px solid #304158;
+        }
+
+        .memoria-layout .alerts-heading {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .memoria-layout .alerts-heading h3 {
+            color: #f1f5f9;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .memoria-layout .alerts-heading p {
+            margin-top: 6px;
+            color: #a8b8cd;
+            font-size: 0.8rem;
+        }
+
+        .memoria-layout .alerts-table-wrapper {
+            flex: 1;
+            min-height: 0;
+            overflow-x: auto;
+            overflow-y: auto;
+            margin-top: 12px;
+        }
+
+        .memoria-layout .alerts-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+        }
+
+        .memoria-layout .alerts-table th {
+            padding: 13px 10px;
+            color: #94a3b8;
+            font-weight: 500;
+            text-align: left;
+            border-bottom: 1px solid #304158;
+        }
+
+        .memoria-layout .alerts-table td {
+            padding: 14px 10px;
+            color: #e2e8f0;
+            border-bottom: 1px solid #304158;
+        }
+
+        .memoria-layout .alerts-empty {
+            padding: 35px 16px;
+            text-align: center;
+            color: #94a3b8;
+            line-height: 1.6;
+        }
+
+        /* Responsividade */
+
+        @media (max-width: 1400px) {
+            .memoria-layout {
+                grid-template-columns: minmax(0, 1fr);
+            }
+
+            .memoria-layout .alerts-panel {
+                min-height: 240px;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .memoria-graficos {
+                grid-template-columns: 1fr;
+            }
+
+            .memoria-graficos .chart-card {
+                min-height: 300px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .memoria-layout,
+            .memoria-graficos {
+                gap: 14px;
+            }
+
+            .memoria-graficos .chart-card,
+            .memoria-layout .alerts-panel {
+                min-height: 260px;
+                padding: 14px;
+            }
+
+            .grafico-placeholder {
+                min-height: 180px;
+                padding: 16px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <aside class="sidebar">
+
+        <div>
+            <div class="brand">
+                <img src="./assets/imgs/EcomCoresemfundo.png"
+                     alt="Logo EcomCore"
+                     class="brand-logo">
+            </div>
+
+            <div class="user-profile">
+                <div class="welcome-text">Bem-vindo de volta,</div>
+                <div class="user-name" id="nomeAnalista">EcomCore</div>
+            </div>
+
+            <ul class="nav-menu">
+
+                <li class="nav-item" onclick="location.href='./index.html'">
+                    <span>Dashboard</span>
+                </li>
+
+                <li class="nav-item" onclick="location.href='./cpu.html'">
+                    <span>CPU</span>
+                </li>
+
+                <li class="nav-item active" onclick="location.href='./memoria.html'">
+                    <span>Memória RAM</span>
+                </li>
+
+                <li class="nav-item" onclick="location.href='./disco.html'">
+                    <span>Disco</span>
+                </li>
+
+                <li class="nav-item" onclick="location.href='./rede.html'">
+                    <span>Rede</span>
+                </li>
+
+                <li class="nav-item" onclick="location.href='./finops.html'">
+                    <span>FinOps</span>
+                </li>
+
+            </ul>
+        </div>
+
+        <div class="sidebar-actions">
+
+            <a class="btn-support"
+               href="https://magna-sync.atlassian.net/jira/software/projects/SCRUM/form/1?atlOrigin=eyJpIjoiNmY4MzZjZTk2MTY4NDk3Zjk1YzEwZmEwZWY2NGFkNjIiLCJwIjoiaiJ9"
+               target="_blank"
+               rel="noopener noreferrer">
+                <span>Suporte</span>
+            </a>
+
+            <button class="btn-logout" onclick="logout()">
+                <span>Sair</span>
+            </button>
+
+        </div>
+
+    </aside>
+
+    <main class="main-content">
+
+        <header class="header">
+            <h2>Monitoramento de Memória RAM · Servidor 5</h2>
+            <p>Visão detalhada da memória física e virtual no ambiente de homologação.</p>
+        </header>
+
+        <div class="homologacao-aviso">
+            Ambiente de homologação — esta dashboard apresenta apenas a
+            estrutura visual do monitoramento de memória RAM.
+            A coleta e a exibição de métricas não estão habilitadas nesta página.
+        </div>
+
+        <!-- KPIs -->
+
+        <section class="kpi-grid" aria-label="Indicadores de memória RAM">
+
+            <article class="kpi-card">
+                <p class="kpi-label">Uso de RAM</p>
+                <p class="kpi-value" id="uso">--%</p>
+                <p class="kpi-description" id="estado">
+                    Nível: Indisponível
+                </p>
+            </article>
+
+            <article class="kpi-card">
+                <p class="kpi-label">Memória usada</p>
+                <p class="kpi-value" id="usada">-- GB</p>
+                <p class="kpi-description">
+                    Memória física em uso
+                </p>
+            </article>
+
+            <article class="kpi-card">
+                <p class="kpi-label">Memória disponível</p>
+                <p class="kpi-value" id="disponivel">-- GB</p>
+                <p class="kpi-description">
+                    RAM disponível para processos
+                </p>
+            </article>
+
+            <article class="kpi-card">
+                <p class="kpi-label">Memória total</p>
+                <p class="kpi-value" id="total">-- GB</p>
+                <p class="kpi-description">
+                    Capacidade física detectada
+                </p>
+            </article>
+
+        </section>
+
+        <p class="metrics-status" id="status" role="status">
+            Ambiente de homologação — indicadores de memória RAM não habilitados.
+        </p>
+
+        <!-- GRÁFICOS E ALERTAS -->
+
+        <div class="monitoring-layout memoria-layout">
+
+            <section class="memoria-graficos" aria-label="Gráficos de memória RAM">
+
+                <!-- GRÁFICO 1 -->
+
+                <article class="card chart-card">
+
+                    <header class="chart-heading">
+                        <h3>Histórico de utilização da RAM</h3>
+                        <p>
+                            Percentual de memória utilizada nas últimas leituras
+                        </p>
+                    </header>
+
+                    <div class="chart-container">
+                        <div class="grafico-placeholder">
+                            <span class="icone">▥</span>
+                            <strong>Histórico de utilização da RAM</strong>
+                            <p>
+                                Área reservada para o gráfico de evolução
+                                do consumo de memória.
+                            </p>
+                            <p>Dados não disponíveis nesta página.</p>
+                        </div>
+                    </div>
+
+                </article>
+
+                <!-- GRÁFICO 2 -->
+
+                <article class="card chart-card">
+
+                    <header class="chart-heading">
+                        <h3>Comparativo de RAM por hora do dia</h3>
+                        <p>
+                            Média de memória usada e disponível em cada hora,
+                            considerando o histórico coletado
+                        </p>
+                    </header>
+
+                    <div class="chart-container">
+                        <div class="grafico-placeholder">
+                            <span class="icone">▥</span>
+                            <strong>Comparativo de memória RAM</strong>
+                            <p>
+                                Área reservada para a comparação entre
+                                memória utilizada e disponível.
+                            </p>
+                            <p>Dados não disponíveis nesta página.</p>
+                        </div>
+                    </div>
+
+                </article>
+
+            </section>
+
+            <!-- ALERTAS -->
+
+            <aside class="alerts-panel" aria-labelledby="alerts-ram-title">
+
+                <header class="alerts-heading">
+
+                    <div>
+                        <h3 id="alerts-ram-title">Alertas recentes</h3>
+                        <p>Eventos detectados durante o monitoramento</p>
+                    </div>
+
+                    <span class="alerts-count" id="alertCount">—</span>
+
+                </header>
+
+                <div class="alerts-table-wrapper table-spaced">
+
+                    <table class="alerts-table">
+
+                        <thead>
+                            <tr>
+                                <th scope="col">Horário</th>
+                                <th scope="col">Nível</th>
+                                <th scope="col">Valor</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="recentAlerts">
+                            <tr>
+                                <td colspan="3" class="alerts-empty">
+                                    Monitoramento de alertas não habilitado
+                                    neste ambiente de demonstração.
+                                </td>
+                            </tr>
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </aside>
+
+        </div>
+
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const nomeSalvo =
+                sessionStorage.getItem('NOME_USUARIO') ||
+                localStorage.getItem('NOME_USUARIO');
+
+            if (nomeSalvo) {
+                document.getElementById('nomeAnalista').textContent = nomeSalvo;
+            }
+        });
+
+        function logout() {
+            sessionStorage.clear();
+            localStorage.clear();
+            window.location.href = './login.html';
+        }
+    </script>
+
+</body>
+</html>

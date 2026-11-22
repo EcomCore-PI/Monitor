@@ -1,0 +1,87 @@
+
+.finops-content {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    min-height: 100vh;
+    height: auto;
+}
+
+.finops-content .header {
+    margin-bottom: 0;
+}
+
+.finops-content .metrics-status {
+    margin: 0;
+}
+
+.finops-graficos {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    flex: 1;
+    min-height: 320px;
+}
+
+.finops-graficos .chart-card {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 320px;
+}
+
+.finops-graficos .chart-container {
+    flex: 1;
+    height: 280px;
+    min-height: 260px;
+}
+
+.finops-observacao {
+    color: #94a3b8;
+    font-size: 0.75rem;
+    line-height: 1.6;
+}
+
+@media (max-width: 600px) {
+    .finops-content {
+        gap: 14px;
+    }
+
+    .finops-graficos .chart-card {
+        min-height: 260px;
+    }
+
+    .finops-graficos .chart-container {
+        min-height: 220px;
+    }
+}
+
+/* =========================================
+   FINOPS - LAYOUT ORIGINAL
+   ========================================= */
+
+.finops-graficos {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+    align-items: stretch;
+}
+
+.finops-graficos .chart-card {
+    min-width: 0;
+    width: 100%;
+}
+
+.finops-graficos .chart-container {
+    position: relative;
+    width: 100%;
+    min-width: 0;
+}
+
+/* Empilhar apenas em telas pequenas */
+
+@media (max-width: 900px) {
+    .finops-graficos {
+        grid-template-columns: 1fr;
+    }
+}

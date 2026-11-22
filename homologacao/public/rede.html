@@ -1,0 +1,308 @@
+
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>EcomCore - Monitoramento de Rede</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="./assets/imgs/EcomCore.png">
+    <link rel="stylesheet" href="./dashboard.css">
+    <link rel="stylesheet" href="./css/rede.css">
+</head>
+
+<body>
+
+    <aside class="sidebar">
+
+        <div>
+            <div class="brand">
+                <img src="./assets/imgs/EcomCoresemfundo.png"
+                     alt="Logo EcomCore"
+                     class="brand-logo">
+            </div>
+
+            <div class="user-profile">
+                <div class="welcome-text">Bem-vindo de volta,</div>
+                <div class="user-name" id="nomeAnalista">EcomCore</div>
+            </div>
+
+            <ul class="nav-menu">
+
+                <li class="nav-item" onclick="location.href='./index.html'">
+                    <span>Dashboard</span>
+                </li>
+
+                <li class="nav-item" onclick="location.href='./cpu.html'">
+                    <span>CPU</span>
+                </li>
+
+                <li class="nav-item" onclick="location.href='./memoria.html'">
+                    <span>Memória RAM</span>
+                </li>
+
+                <li class="nav-item" onclick="location.href='./disco.html'">
+                    <span>Disco</span>
+                </li>
+
+                <li class="nav-item active" onclick="location.href='./rede.html'">
+                    <span>Rede</span>
+                </li>
+
+                <li class="nav-item" onclick="location.href='./finops.html'">
+                    <span>FinOps</span>
+                </li>
+
+            </ul>
+        </div>
+
+        <div class="sidebar-actions">
+
+            <a class="btn-support"
+               href="https://magna-sync.atlassian.net/jira/software/projects/SCRUM/form/1?atlOrigin=eyJpIjoiNmY4MzZjZTk2MTY4NDk3Zjk1YzEwZmEwZWY2NGFkNjIiLCJwIjoiaiJ9"
+               target="_blank"
+               rel="noopener noreferrer">
+                <span>Suporte</span>
+            </a>
+
+            <button class="btn-logout" onclick="logout()">
+                <span>Sair</span>
+            </button>
+
+        </div>
+
+    </aside>
+
+    <main class="main-content rede-page">
+
+        <header class="header">
+            <h2 id="tituloServidorRede">Monitoramento de Rede · Servidor 5</h2>
+            <p>Visão detalhada do tráfego e da disponibilidade da conexão do servidor</p>
+        </header>
+
+        <div class="homologacao-aviso">
+            Ambiente de homologação — esta dashboard apresenta apenas a
+            estrutura visual do monitoramento de rede.
+            A coleta e a exibição de métricas não estão habilitadas nesta página.
+        </div>
+
+        <!-- KPIs -->
+
+        <section class="kpi-grid" aria-label="Indicadores de rede">
+
+            <article class="kpi-card">
+                <p class="kpi-label">Download</p>
+
+                <p class="kpi-value">
+                    <span id="kpiDownload">--</span>
+                    <span class="kpi-unit">Mbps</span>
+                </p>
+
+                <p class="kpi-description">
+                    Recebimento no servidor
+                </p>
+
+                <p class="kpi-detail">
+                    Tráfego recebido por segundo
+                </p>
+            </article>
+
+            <article class="kpi-card">
+                <p class="kpi-label">Upload</p>
+
+                <p class="kpi-value">
+                    <span id="kpiUpload">--</span>
+                    <span class="kpi-unit">Mbps</span>
+                </p>
+
+                <p class="kpi-description">
+                    Envio pelo servidor
+                </p>
+
+                <p class="kpi-detail">
+                    Tráfego enviado por segundo
+                </p>
+            </article>
+
+            <article class="kpi-card">
+                <p class="kpi-label">Latência</p>
+
+                <p class="kpi-value">
+                    <span id="kpiLatencia">--</span>
+                    <span class="kpi-unit">ms</span>
+                </p>
+
+                <p class="kpi-description">
+                    Último teste de ping
+                </p>
+
+                <p class="kpi-detail" id="kpiLatenciaDestino">
+                    Destino não consultado
+                </p>
+            </article>
+
+            <article class="kpi-card">
+                <p class="kpi-label">Perda de pacotes</p>
+
+                <p class="kpi-value">
+                    <span id="kpiPerda">--</span>
+                    <span class="kpi-unit">%</span>
+                </p>
+
+                <p class="kpi-description">
+                    Média dos últimos 20 pings
+                </p>
+
+                <p class="kpi-detail">
+                    Janela de aproximadamente 1 minuto
+                </p>
+            </article>
+
+        </section>
+
+        <!-- STATUS DA CONEXÃO -->
+
+        <p class="metrics-status" id="statusRede" role="status">
+
+            <span class="estado-conexao estado--aguardando" id="estadoConexao">
+                <span class="estado-dot" aria-hidden="true"></span>
+                <span id="estadoTexto">Monitoramento desabilitado</span>
+            </span>
+
+            <span class="estado-separador">·</span>
+
+            <span id="statusAtualizacao">
+                Ambiente de homologação — indicadores de rede não habilitados.
+            </span>
+
+        </p>
+
+        <!-- GRÁFICOS E ALERTAS -->
+
+        <div class="monitoring-layout rede-layout">
+
+            <section class="rede-charts" aria-label="Gráficos de rede">
+
+                <!-- GRÁFICO 1 -->
+
+                <article class="card chart-card">
+
+                    <header class="chart-heading">
+                        <h3>Erros, descartes e colisões</h3>
+                        <p>Variação dos contadores da interface a cada coleta</p>
+                    </header>
+
+                    <div class="chart-container">
+                        <div class="grafico-placeholder">
+                            <span class="icone">▥</span>
+
+                            <strong>Erros, descartes e colisões</strong>
+
+                            <p>
+                                Área reservada para o gráfico de erros,
+                                pacotes descartados e colisões de rede.
+                            </p>
+
+                            <p>Dados não disponíveis nesta página.</p>
+                        </div>
+                    </div>
+
+                </article>
+
+                <!-- GRÁFICO 2 -->
+
+                <article class="card chart-card">
+
+                    <header class="chart-heading">
+                        <h3>Disponibilidade da conexão</h3>
+                        <p>Disponibilidade móvel dos últimos 20 pings</p>
+                    </header>
+
+                    <div class="chart-container">
+                        <div class="grafico-placeholder">
+                            <span class="icone">▥</span>
+
+                            <strong>Disponibilidade da conexão</strong>
+
+                            <p>
+                                Área reservada para o gráfico de disponibilidade
+                                e estabilidade da conexão do servidor.
+                            </p>
+
+                            <p>Dados não disponíveis nesta página.</p>
+                        </div>
+                    </div>
+
+                </article>
+
+            </section>
+
+            <!-- ALERTAS -->
+
+            <aside class="alerts-panel" aria-labelledby="alerts-rede-title">
+
+                <header class="alerts-heading">
+
+                    <div>
+                        <h3 id="alerts-rede-title">Alertas recentes</h3>
+                        <p>Eventos de conexão detectados nesta sessão</p>
+                    </div>
+
+                    <span class="alerts-count" id="contadorAlertas">—</span>
+
+                </header>
+
+                <div class="alerts-table-wrapper table-spaced">
+
+                    <table class="alerts-table">
+
+                        <thead>
+                            <tr>
+                                <th scope="col">Horário</th>
+                                <th scope="col">Evento</th>
+                                <th scope="col">Nível</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="tabelaAlertasRede">
+                            <tr>
+                                <td colspan="3" class="alerts-empty">
+                                    Monitoramento de alertas não habilitado
+                                    neste ambiente de demonstração.
+                                </td>
+                            </tr>
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </aside>
+
+        </div>
+
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const nomeSalvo =
+                sessionStorage.getItem('NOME_USUARIO') ||
+                localStorage.getItem('NOME_USUARIO');
+
+            if (nomeSalvo) {
+                document.getElementById('nomeAnalista').textContent = nomeSalvo;
+            }
+        });
+
+        function logout() {
+            sessionStorage.clear();
+            localStorage.clear();
+            window.location.href = './login.html';
+        }
+    </script>
+
+</body>
+</html>

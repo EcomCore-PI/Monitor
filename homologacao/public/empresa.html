@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="./css/empresa.css">
+    <link rel="stylesheet" href="./css/modal.css">
+    <link rel="icon" href="./assets/imgs/favcore1.png">
+    <title>EcomCore - Painel Administrador</title>
+</head>
+
+<body>
+
+    <header>
+        <div class="logo">
+            <img src="./assets/imgs/EcomCoresemfundo.png" alt="Logo EcomCore">
+        </div>
+
+        <a class="btn-voltar" href="./login.html" onclick="sessionStorage.clear()" style="text-decoration: none;">
+            Sair
+        </a>
+    </header>
+
+    <div class="identificacao-rh">
+        RH - EMPRESA XPTO
+    </div>
+
+    <main>
+        <section class="card">
+            <h2>FUNCIONÁRIOS</h2>
+            <div id="listaUsuarios"></div>
+        </section>
+
+        <section class="card">
+
+            <h2>CADASTRO</h2>
+
+            <form id="formCadastro">
+
+                <label for="nomeCompleto">NOME</label>
+                <input type="text" id="nomeCompleto" name="nomeCompleto" placeholder="Nome completo" required>
+
+                <label for="email">E-MAIL</label>
+                <input type="email" id="email" name="email" placeholder="nome@empresa.com.br" required>
+
+                <label for="cargo">PERFIL</label>
+                <select id="cargo" name="cargo" required>
+                    <option value="" disabled selected>
+                        Selecione o perfil
+                    </option>
+                    <option value="Analista">Analista</option>
+                    <option value="Gestor">Gestor</option>
+                    <option value="RH">RH</option>
+                </select>
+
+                <p class="ajuda-convite">Enviaremos um link por email para a pessoa definir a própria senha.</p>
+
+                <div class="btn-finalizar-wrap">
+                    <button class="btn-finalizar" type="submit">
+                        FINALIZAR
+                    </button>
+                </div>
+
+            </form>
+
+        </section>
+    </main>
+
+    <dialog id="modalSenha">
+        <form id="formSenha">
+            <h3>Alterar senha</h3>
+            <p class="modal-sub">Funcionário: <strong id="modalNome"></strong></p>
+
+            <label for="novaSenha">NOVA SENHA</label>
+            <input type="password" id="novaSenha" minlength="8" required>
+
+            <label for="confirmarNovaSenha">CONFIRMAR NOVA SENHA</label>
+            <input type="password" id="confirmarNovaSenha" minlength="8" required>
+
+            <p class="modal-erro" id="modalErro" role="alert"></p>
+
+            <div class="modal-acoes">
+                <button type="button" id="cancelarModal">Cancelar</button>
+                <button type="submit">Confirmar</button>
+            </div>
+        </form>
+    </dialog>
+
+    <script src="./js/empresa.js"></script>
+</body>
+
+</html>

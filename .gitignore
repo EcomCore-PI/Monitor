@@ -4,3 +4,12 @@
 .github
 __pycache__/
 *.pyc
+
+# Ambiente de homologação
+homologacao/.env
+homologacao/.env.*
+homologacao/**/.env
+homologacao/**/.env.*
+homologacao/**/node_modules/
+homologacao/**/*.pem
+homologacao/**/*.key

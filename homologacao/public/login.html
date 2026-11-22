@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcomCore - Login</title>
+
+    <script src="./js/sessao.js"></script>
+
+    <link rel="icon" href="./assets/imgs/favcore1.png">
+    <link rel="stylesheet" href="./css/login.css">
+</head>
+
+<body>
+    <div class="background-login">
+
+        <header class="cabecalho">
+            <div class="cabecalho-conteudo">
+                <a class="logo-cabecalho" href="index.html">
+                    <img src="./assets/imgs/EcomCoresemfundo.png" alt="Logo EcomCore">
+                </a>
+                <nav>
+                    <ul class="menu">
+                        <li><a class="menu-link" href="index.html">Home</a></li>
+                        <li><a class="menu-link" href="index.html#entre-contato">Contato</a></li>
+                    </ul>
+                </nav>
+                <a class="botao botao-claro botao-login" href="index.html">Voltar</a>
+            </div>
+        </header>
+
+        <div class="login">
+            <div class="alerta_erro">
+                <div class="card_erro" id="cardErro">
+                    <span id="mensagem_erro"></span>
+                </div>
+            </div>
+
+            <div class="login-container">
+                <div class="card card-login">
+                    <h2>Bem-vindo!</h2>
+                    <p class="subtitulo">Faça login para acessar a EcomCore.</p>
+
+                    <div class="formulario">
+                        <div class="campo">
+                            <h4 class="titulo_input">E-mail</h4>
+                            <input id="email_input" type="text" placeholder="voce@empresa">
+                        </div>
+                        <div class="campo">
+                            <h4 class="titulo_input">Senha</h4>
+                            <input id="senha_input" type="password" placeholder="******">
+                        </div>
+                        <button class="botao-entrar" onclick="entrar()">Entrar</button>
+                    </div>
+
+                    <div id="div_aguardar" class="loading-div" style="display: none;">
+                        <img src="./assets/icon/carregando.gif" id="loading-gif" alt="Carregando">
+                    </div>
+                    <div id="div_erros_login"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+
+        function entrar() {
+            aguardar();
+
+            var emailVar = email_input.value;
+            var senhaVar = senha_input.value;
+
+            if (emailVar == "" || senhaVar == "") {
+                cardErro.style.display = "block";
+                mensagem_erro.innerHTML = "(Mensagem de erro para todos os campos em branco)";
+                finalizarAguardar();
+                return false;
+            } else {
+                setTimeout(sumirMensagem, 5000);
+            }
+
+            fetch("/usuarios/autenticar", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    emailServer: emailVar,
+                    senhaServer: senhaVar
+                })
+            }).then(function (resposta) {
+                if (resposta.ok) {
+                    resposta.json().then(json => {
+                        sessionStorage.EMAIL_USUARIO = json.email;
+                        sessionStorage.NOME_USUARIO = json.nome;
+                        sessionStorage.ID_USUARIO = json.id;
+                        sessionStorage.CARGO_USUARIO = json.cargo;
+                        sessionStorage.FK_EMPRESA = json.fk_empresa;
+
+                        const cargo = String(json.cargo || "").trim().toLowerCase();
+                        const nomeUsuario = String(json.nome || "").trim().toLowerCase();
+                        const emailUsuario = String(json.email || "").trim().toLowerCase();
+
+                        let rotaDestino = "/index.html";
+                        if (nomeUsuario.includes("marco") || emailUsuario.includes("marco")) {
+                            rotaDestino = "/Individuais/Marco/cpu.html";
+                        } else if (nomeUsuario.includes("joão") || nomeUsuario.includes("joao") || emailUsuario.includes("joao")) {
+                            rotaDestino = "/Individuais/João-Miguel/memoria.html";
+                        } else if (nomeUsuario.includes("ana") || emailUsuario.includes("ana")) {
+                            rotaDestino = "/Individuais/Ana-Clara/disco.html";
+                        } else if (nomeUsuario.includes("matheus") || emailUsuario.includes("math")) {
+                            rotaDestino = "/Individuais/Matheus/rede.html";
+                        } else if (nomeUsuario.includes("isabelle") || emailUsuario.includes("isa")) {
+                            rotaDestino = "/Individuais/Isabelle/financeiro.html";
+                        }
+
+                        const baseMonitoramento = window.location.protocol + "//" + window.location.hostname + ":8000";
+                        const urlMonitoramento = baseMonitoramento + rotaDestino;
+
+                        if (["analista", "gestor", "admin"].includes(cargo)) {
+                            fetch("/servidores/empresa/" + json.fk_empresa)
+                                .then(function (r) {
+                                    if (!r.ok) throw new Error("Erro ao buscar servidores da empresa");
+                                    return r.json();
+                                })
+                                .then(function (lista) {
+                                    if (!Array.isArray(lista) || lista.length === 0) {
+                                        finalizarAguardar("Sua empresa ainda não possui servidor cadastrado.");
+                                        return;
+                                    }
+
+                                    const servidor = lista[0];
+                                    const idServidor = servidor.id || servidor.id_servidor;
+
+                                    if (!idServidor) {
+                                        finalizarAguardar("Servidor cadastrado sem identificador válido.");
+                                        return;
+                                    }
+
+                                    sessionStorage.ID_SERVIDOR = idServidor;
+                                    const nomeParam = encodeURIComponent(json.nome || "Analista");
+                                    window.location.assign(`${urlMonitoramento}?servidor=${idServidor}&nome=${nomeParam}`);
+                                })
+                                .catch(function (erro) {
+                                    console.error(erro);
+                                    finalizarAguardar("Não foi possível buscar o servidor da empresa.");
+                                });
+                        } else if (cargo === "rh") {
+                            window.location.assign("./empresa.html");
+                        } else {
+                            finalizarAguardar("O cargo deste usuário não possui uma tela configurada.");
+                        }
+                    });
+
+                } else {
+                    resposta.text().then(texto => {
+                        console.error(texto);
+                        finalizarAguardar(texto);
+                    });
+                }
+
+            }).catch(function (erro) {
+                console.log(erro);
+                finalizarAguardar("Não foi possível conectar ao servidor. Tente novamente.");
+            });
+
+            return false;
+        }
+
+        [email_input, senha_input].forEach(function (campo) {
+            campo.addEventListener("keydown", function (event) {
+                if (event.key === "Enter") {
+                    event.preventDefault();
+                    entrar();
+                }
+            });
+        });
+
+        function sumirMensagem() {
+            cardErro.style.display = "none";
+        }
+
+    </script>
+</body>
+
+</html>

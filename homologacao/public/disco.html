@@ -1,0 +1,253 @@
+
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>EcomCore - Monitoramento de Disco</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="./assets/imgs/EcomCore.png">
+    <link rel="stylesheet" href="./dashboard.css">
+    <link rel="stylesheet" href="./css/disco.css">
+</head>
+
+<body>
+
+    <aside class="sidebar">
+
+        <div>
+            <div class="brand">
+                <img src="./assets/imgs/EcomCoresemfundo.png"
+                     alt="Logo EcomCore"
+                     class="brand-logo">
+            </div>
+
+            <div class="user-profile">
+                <div class="welcome-text">Bem-vindo de volta,</div>
+                <div class="user-name" id="nomeAnalista">EcomCore</div>
+            </div>
+
+            <ul class="nav-menu">
+
+                <li class="nav-item" onclick="location.href='./index.html'">
+                    <span>Dashboard</span>
+                </li>
+
+                <li class="nav-item" onclick="location.href='./cpu.html'">
+                    <span>CPU</span>
+                </li>
+
+                <li class="nav-item" onclick="location.href='./memoria.html'">
+                    <span>Memória RAM</span>
+                </li>
+
+                <li class="nav-item active" onclick="location.href='./disco.html'">
+                    <span>Disco</span>
+                </li>
+
+                <li class="nav-item" onclick="location.href='./rede.html'">
+                    <span>Rede</span>
+                </li>
+
+                <li class="nav-item" onclick="location.href='./finops.html'">
+                    <span>FinOps</span>
+                </li>
+
+            </ul>
+        </div>
+
+        <div class="sidebar-actions">
+
+            <a class="btn-support"
+               href="https://magna-sync.atlassian.net/jira/software/projects/SCRUM/form/1?atlOrigin=eyJpIjoiNmY4MzZjZTk2MTY4NDk3Zjk1YzEwZmEwZWY2NGFkNjIiLCJwIjoiaiJ9"
+               target="_blank"
+               rel="noopener noreferrer">
+                <span>Suporte</span>
+            </a>
+
+            <button class="btn-logout" onclick="logout()">
+                <span>Sair</span>
+            </button>
+
+        </div>
+
+    </aside>
+
+    <main class="main-content">
+
+        <header class="header">
+            <h2>Monitoramento de Disco · Servidor 5</h2>
+            <p>Uso do armazenamento e desempenho das operações de leitura e escrita</p>
+        </header>
+
+        <div class="homologacao-aviso">
+            Ambiente de homologação — esta dashboard apresenta apenas a
+            estrutura visual do monitoramento de disco.
+            A coleta e a exibição de métricas não estão habilitadas nesta página.
+        </div>
+
+        <!-- KPIs -->
+
+        <section class="kpi-grid" aria-label="Indicadores de disco">
+
+            <article class="kpi-card">
+                <p class="kpi-label">Armazenamento utilizado</p>
+                <p class="kpi-value" id="percentual">--%</p>
+                <p class="kpi-description" id="estado">
+                    Nível: Indisponível
+                </p>
+            </article>
+
+            <article class="kpi-card">
+                <p class="kpi-label">Espaço disponível</p>
+                <p class="kpi-value" id="livre">-- GB</p>
+                <p class="kpi-description">
+                    Espaço livre no volume monitorado
+                </p>
+            </article>
+
+            <article class="kpi-card">
+                <p class="kpi-label">Utilização de I/O</p>
+                <p class="kpi-value" id="ioUtilizacao">--%</p>
+                <p class="kpi-description">
+                    Tempo ocupado do disco
+                </p>
+            </article>
+
+            <article class="kpi-card">
+                <p class="kpi-label">IOPS</p>
+                <p class="kpi-value" id="iops">--</p>
+                <p class="kpi-description">
+                    Operações de leitura e escrita por segundo
+                </p>
+            </article>
+
+        </section>
+
+        <p class="metrics-status" id="status" role="status">
+            Ambiente de homologação — indicadores de disco não habilitados.
+        </p>
+
+        <!-- GRÁFICOS E ALERTAS -->
+
+        <div class="monitoring-layout disco-layout">
+
+            <section class="disco-charts" aria-label="Gráficos de disco">
+
+                <!-- GRÁFICO 1 -->
+
+                <article class="card chart-card">
+
+                    <header class="chart-heading">
+                        <h3>Latência de leitura e escrita</h3>
+                        <p>Tempo médio por operação (ms)</p>
+                    </header>
+
+                    <div class="chart-container">
+                        <div class="grafico-placeholder">
+                            <span class="icone">▥</span>
+                            <strong>Latência de leitura e escrita</strong>
+                            <p>
+                                Área reservada para o gráfico de tempo médio
+                                das operações de leitura e escrita.
+                            </p>
+                            <p>Dados não disponíveis nesta página.</p>
+                        </div>
+                    </div>
+
+                </article>
+
+                <!-- GRÁFICO 2 -->
+
+                <article class="card chart-card">
+
+                    <header class="chart-heading">
+                        <h3>Taxa de transferência</h3>
+                        <p>Dados lidos e gravados por segundo (MB/s)</p>
+                    </header>
+
+                    <div class="chart-container">
+                        <div class="grafico-placeholder">
+                            <span class="icone">▥</span>
+                            <strong>Taxa de transferência</strong>
+                            <p>
+                                Área reservada para o gráfico de velocidade
+                                de leitura e escrita do disco.
+                            </p>
+                            <p>Dados não disponíveis nesta página.</p>
+                        </div>
+                    </div>
+
+                </article>
+
+            </section>
+
+            <!-- ALERTAS -->
+
+            <aside class="alerts-panel" aria-labelledby="alerts-disco-title">
+
+                <header class="alerts-heading">
+
+                    <div>
+                        <h3 id="alerts-disco-title">Alertas recentes</h3>
+                        <p>Eventos detectados durante o monitoramento</p>
+                    </div>
+
+                    <span class="alerts-count" id="alertCount">—</span>
+
+                </header>
+
+                <div class="alerts-table-wrapper table-spaced">
+
+                    <table class="alerts-table">
+
+                        <thead>
+                            <tr>
+                                <th scope="col">Horário</th>
+                                <th scope="col">Nível</th>
+                                <th scope="col">Valor</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="recentAlerts">
+                            <tr>
+                                <td colspan="3" class="alerts-empty">
+                                    Monitoramento de alertas não habilitado
+                                    neste ambiente de demonstração.
+                                </td>
+                            </tr>
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </aside>
+
+        </div>
+
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const nomeSalvo =
+                sessionStorage.getItem('NOME_USUARIO') ||
+                localStorage.getItem('NOME_USUARIO');
+
+            if (nomeSalvo) {
+                document.getElementById('nomeAnalista').textContent = nomeSalvo;
+            }
+        });
+
+        function logout() {
+            sessionStorage.clear();
+            localStorage.clear();
+            window.location.href = './login.html';
+        }
+    </script>
+
+</body>
+</html>
