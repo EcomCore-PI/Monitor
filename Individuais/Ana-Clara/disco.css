@@ -1,56 +1,108 @@
-/* Layout compacto inspirado na dashboard de CPU: cards uniformes e gráficos empilhados */
+/* Dashboard de Disco — alinhada ao padrão visual da dashboard de RAM */
+
+/* KPIs mais compactos para liberar área útil */
+.main-content .kpi-grid {
+    gap: 12px;
+}
+.main-content .kpi-card {
+    padding: 15px 16px;
+    border-radius: 16px;
+}
+.main-content .kpi-label {
+    font-size: 0.98rem;
+    line-height: 1.25;
+}
+.main-content .kpi-value {
+    margin-top: 7px;
+    font-size: clamp(1.65rem, 2.1vw, 2.35rem);
+    line-height: 1.15;
+}
+.main-content .kpi-description {
+    margin-top: 5px;
+    font-size: 0.82rem;
+    line-height: 1.3;
+}
+
+/* Dois gráficos e alertas, em três colunas no desktop */
 .disco-layout {
     display: grid;
-    grid-template-columns: minmax(0, 1.8fr) minmax(300px, 1fr);
-    gap: 16px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
     align-items: stretch;
-}
-.disco-charts {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
     min-width: 0;
 }
-.disco-charts .chart-card {
-    height: 300px;
-    min-height: 300px;
+.disco-charts {
+    display: contents;
+}
+.disco-layout .chart-card,
+.disco-layout > .alerts-panel {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    margin: 0;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
-.disco-charts .chart-heading h3 {
-    margin-bottom: 6px;
+.disco-layout .chart-heading {
+    flex: 0 0 auto;
+    margin-bottom: 10px;
 }
-.disco-charts .chart-heading p {
+.disco-layout .chart-heading h3 {
+    margin-bottom: 5px;
+}
+.disco-layout .chart-heading p {
     margin-top: 0;
 }
-.disco-charts .chart-container {
+.disco-layout .chart-container {
     position: relative;
-    flex: 1;
-    min-height: 0;
+    flex: 1 1 0;
+    width: 100%;
     height: 0;
+    min-height: 0;
 }
 .disco-layout > .alerts-panel {
-    margin-top: 0;
-    min-height: 616px;
-    max-height: 616px;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    position: sticky;
-    top: 16px;
+    position: static;
+    min-height: 0;
+    max-height: none;
+}
+.disco-layout > .alerts-panel .alerts-heading {
+    flex: 0 0 auto;
 }
 .disco-layout > .alerts-panel .alerts-table-wrapper {
-    flex: 1;
+    flex: 1 1 auto;
     min-height: 0;
     overflow-y: auto;
 }
-@media (max-width: 1050px) {
-    .disco-layout { grid-template-columns: 1fr; }
-    .disco-layout > .alerts-panel { position: static; min-height: 260px; max-height: 280px; }
-    .disco-charts .chart-card { height: 300px; min-height: 300px; }
+
+/* Tablet: gráficos em duas colunas e alertas abaixo */
+@media (max-width: 1150px) {
+    .disco-layout {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .disco-layout > .alerts-panel {
+        grid-column: 1 / -1;
+        min-height: 260px;
+    }
+    .disco-layout .chart-card {
+        min-height: 300px;
+    }
 }
-@media (max-width: 600px) {
-    .disco-charts .chart-card { height: 270px; min-height: 270px; }
-    .disco-layout > .alerts-panel { min-height: 250px; max-height: 260px; }
+
+/* Celular: KPIs e painéis empilhados */
+@media (max-width: 650px) {
+    .main-content .kpi-grid {
+        grid-template-columns: 1fr;
+    }
+    .disco-layout {
+        grid-template-columns: 1fr;
+    }
+    .disco-layout .chart-card {
+        min-height: 260px;
+    }
+    .disco-layout > .alerts-panel {
+        grid-column: auto;
+        min-height: 240px;
+    }
 }
