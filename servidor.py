@@ -109,9 +109,12 @@ COLETAR = COLETAR and bool(RECURSOS_ATIVOS)
 # Coleta na máquina onde este programa está rodando
 # ---------------------------------------------------------------------------
 def coletar_metricas_rede_instancia():
-    caminho_java = os.environ.get("NETWORK_MONITOR_CLASS_PATH")
-    if caminho_java:
-        comando_java = ["java", "-cp", caminho_java, "NetworkMonitor"]
+    caminho_jar = os.environ.get("NETWORK_MONITOR_JAR")
+    caminho_classes = os.environ.get("NETWORK_MONITOR_CLASS_PATH")
+    if caminho_jar:
+        comando_java = ["java", "-jar", caminho_jar]
+    elif caminho_classes:
+        comando_java = ["java", "-cp", caminho_classes, "NetworkMonitor"]
     else:
         caminho_fonte = os.path.join(PASTA_ATUAL, "Individuais", "Matheus", "NetworkMonitor.java")
         comando_java = ["java", caminho_fonte]
@@ -136,7 +139,7 @@ def coletar_dados():
         dados["disco_percent"] = float(psutil.disk_usage(caminho_disco).percent)
 
     if "Rede Recebida" in RECURSOS_ATIVOS or "Rede Enviada" in RECURSOS_ATIVOS:
-        # Contadores de rede coletados pelo NetworkMonitor.java nesta instância.
+        # Contadores de rede medidos pelo coletor Java nesta instância.
         rede = coletar_metricas_rede_instancia()
         dados["rede_recebida_mib"] = rede["bytes_recebidos"] / (1024 ** 2)
         dados["rede_enviada_mib"] = rede["bytes_enviados"] / (1024 ** 2)

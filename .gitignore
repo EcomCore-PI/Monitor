@@ -4,3 +4,4 @@
 .github
 __pycache__/
 *.pyc
+/network-monitor.jar

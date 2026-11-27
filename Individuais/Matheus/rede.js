@@ -231,7 +231,7 @@ function atualizarInterface(historico) {
 
   if (historico.length === 0) {
     definirEstado('Aguardando coleta', 'estado--aguardando');
-    definirStatus('Nenhuma coleta de rede no banco ainda. Confira se o captura.jar está rodando neste servidor.', false);
+    definirStatus('Nenhuma coleta de rede no banco ainda. Confira o coletor de rede deste servidor.', false);
     return;
   }
 

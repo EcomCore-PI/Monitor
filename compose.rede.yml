@@ -1,0 +1,9 @@
+services:
+  monitor:
+    volumes:
+      - type: bind
+        source: ./network-monitor.jar
+        target: /opt/network-monitor/network-monitor.jar
+        read_only: true
+        bind:
+          create_host_path: false
