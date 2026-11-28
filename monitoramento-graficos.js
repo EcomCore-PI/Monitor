@@ -1,3 +1,11 @@
+// IDs dos servidores correspondentes a cada módulo individual (mesmos do config.js)
+const SERVIDORES_INDIVIDUAIS = {
+    cpu: 6,
+    memoria: 3,
+    disco: 4,
+    rede: 1
+};
+
 function idServidorAtual() {
     const n = parseInt(new URLSearchParams(window.location.search).get("servidor"), 10);
     if (n > 0) {
@@ -6,6 +14,7 @@ function idServidorAtual() {
     }
     return parseInt(sessionStorage.getItem("SERVIDOR_LOGIN"), 10) || 6;
 }
+
 (() => {
     const status = document.getElementById('metrics-status');
     if (typeof Chart === 'undefined') {
@@ -92,12 +101,16 @@ function idServidorAtual() {
 
     const graficoRede = new Chart(document.getElementById('chartRede'), {
         type: 'line',
-        data: { labels: [], datasets: [
-            { label: 'Velocidade da rede (download)', data: [], borderColor: '#60a5fa', backgroundColor: '#60a5fa18', fill: false, borderWidth: 2, tension: 0.25, pointRadius: 0 },
-            { label: 'Velocidade da rede (upload)', data: [], borderColor: '#34d399', backgroundColor: '#34d39918', fill: false, borderWidth: 2, tension: 0.25, pointRadius: 0 },
-        ] },
+        data: {
+            labels: [],
+            datasets: [
+                { label: 'Velocidade da rede (download)', data: [], borderColor: '#60a5fa', backgroundColor: '#60a5fa18', fill: false, borderWidth: 2, tension: 0.25, pointRadius: 0 },
+                { label: 'Velocidade da rede (upload)', data: [], borderColor: '#34d399', backgroundColor: '#34d39918', fill: false, borderWidth: 2, tension: 0.25, pointRadius: 0 },
+            ]
+        },
         options: {
-            responsive: true, maintainAspectRatio: false,
+            responsive: true,
+            maintainAspectRatio: false,
             animation: reduzMovimento.matches ? false : { duration: 250 },
             interaction: { mode: 'index', intersect: false },
             plugins: {
@@ -118,27 +131,15 @@ function idServidorAtual() {
         grafico.update(reduzMovimento.matches ? 'none' : undefined);
     }
 
-    function renderizarKpis(dados) {
-        const recursoAlertas = dados.recurso_mais_alertas;
-        texto('kpi-recurso-alertas', recursoAlertas ? recursoAlertas.recurso : '—');
-
-        const pico = dados.pico_utilizacao;
-        texto('kpi-pico', pico ? percentual(pico.valor) : '—');
-        texto('kpi-pico-info', pico ? `${pico.recurso}` : '');
-
-        const discoLivre = dados.espaco_livre_disco;
-        const discoLivrePercent = dados.disco_livre_percent;
-        texto('kpi-disco-livre', discoLivre
-            ? `${formato.format(discoLivre.livre_gb)} GB`
-            : (discoLivrePercent != null ? percentual(discoLivrePercent) : '—'));
-        texto('kpi-disco-livre-info', discoLivre
-            ? `de ${formato.format(discoLivre.total_gb)} GB no total`
-            : (discoLivrePercent != null
-                ? 'livre (capacidade em GB indisponível)'
-                : 'Capacidade do disco indisponível'));
-
-        texto('kpi-criticos', String(dados.alertas_criticos_24h ?? 0));
-        texto('kpi-criticos-info', '');
+    async function buscarRotaIndividual(url, signal) {
+        try {
+            const resp = await fetch(url, { cache: 'no-store', signal });
+            if (!resp.ok) return [];
+            const json = await resp.json();
+            return Array.isArray(json) ? json : (json ? [json] : []);
+        } catch (_) {
+            return [];
+        }
     }
 
     async function atualizarMetricas() {
@@ -150,74 +151,90 @@ function idServidorAtual() {
         const limite = setTimeout(() => controller.abort(), 8000);
 
         try {
-            const resposta = await fetch('/dados?id_servidor=' + idServidorAtual(), {
-                cache: 'no-store',
-                signal: controller.signal,
+            // Busca em paralelo os dados gravados por cada módulo individual
+            const [histCpu, histRam, histDisco, histRede] = await Promise.all([
+                buscarRotaIndividual(`/metricas/cpu?id_servidor=${SERVIDORES_INDIVIDUAIS.cpu}`, controller.signal),
+                buscarRotaIndividual(`/metricas/memoria?id_servidor=${SERVIDORES_INDIVIDUAIS.memoria}`, controller.signal),
+                buscarRotaIndividual(`/metricas/disco?id_servidor=${SERVIDORES_INDIVIDUAIS.disco}`, controller.signal),
+                buscarRotaIndividual(`/metricas/rede?id_servidor=${SERVIDORES_INDIVIDUAIS.rede}`, controller.signal),
+            ]);
+
+            // 1. Normaliza CPU (mesmo cálculo do cpu.js)
+            const leiturasCpu = histCpu.map(item => {
+                const total = item.cpu_total !== undefined
+                    ? Number(item.cpu_total)
+                    : Number((Number(item.cpu_user ?? 0) + Number(item.cpu_system ?? 0) + Number(item.cpu_iowait ?? 0) + Number(item.cpu_steal ?? 0)).toFixed(1));
+                return { horario: item.horario || '--:--', valor: Math.min(100, Math.max(0, total)) };
             });
-            if (!resposta.ok) throw new Error(`HTTP ${resposta.status}`);
 
-            const dados = await resposta.json();
-            if (!dados.atual || !dados.historico) {
-                throw new Error('Resposta /dados não contém atual e historico.');
+            // 2. Normaliza RAM (memoria.js)
+            const leiturasRam = histRam
+                .filter(item => item.ram_percentual !== undefined)
+                .map(item => ({ horario: item.horario || '--:--', valor: Number(item.ram_percentual) }));
+
+            // 3. Normaliza Disco (disco.js)
+            const leiturasDisco = histDisco
+                .filter(item => item.disco_percentual !== undefined)
+                .map(item => ({ horario: item.horario || '--:--', valor: Number(item.disco_percentual) }));
+
+            // Atualiza gráficos de CPU, RAM e Disco
+            preencherGrafico(graficos.CPU, leiturasCpu);
+            preencherGrafico(graficos.RAM, leiturasRam);
+            preencherGrafico(graficos.Disco, leiturasDisco);
+
+            // 4. Atualiza Gráfico de Rede (rede.js já retorna download_mbps e upload_mbps)
+            const pontosRede = histRede.slice(-MAX_PONTOS);
+            graficoRede.data.labels = pontosRede.map(item => item.horario || '--:--');
+            graficoRede.data.datasets[0].data = pontosRede.map(item => item.download_mbps != null ? Number(item.download_mbps) : null);
+            graficoRede.data.datasets[1].data = pontosRede.map(item => item.upload_mbps != null ? Number(item.upload_mbps) : null);
+            graficoRede.update(reduzMovimento.matches ? 'none' : undefined);
+
+            texto('network-status', pontosRede.length === 0
+                ? 'Sem capturas de rede registradas.'
+                : 'Velocidade em Mbps de recebimento e envio');
+
+            // 5. Calcula os 4 KPIs consolidados da Dashboard Geral
+            const ultimaCpu = leiturasCpu.at(-1)?.valor ?? null;
+            const ultimaRam = leiturasRam.at(-1)?.valor ?? null;
+            const ultimoDiscoObj = histDisco.at(-1) || null;
+            const ultimoDiscoPct = ultimoDiscoObj?.disco_percentual != null ? Number(ultimoDiscoObj.disco_percentual) : null;
+
+            // KPI: Pico de utilização atual entre CPU, RAM e Disco
+            const candidatosPico = [
+                { recurso: 'CPU', valor: ultimaCpu },
+                { recurso: 'Memória RAM', valor: ultimaRam },
+                { recurso: 'Disco', valor: ultimoDiscoPct },
+            ].filter(c => c.valor !== null && Number.isFinite(c.valor));
+
+            if (candidatosPico.length > 0) {
+                const maior = candidatosPico.reduce((max, atual) => atual.valor > max.valor ? atual : max);
+                texto('kpi-pico', percentual(maior.valor));
+                texto('kpi-pico-info', `Componente: ${maior.recurso}`);
+            } else {
+                texto('kpi-pico', '—');
+                texto('kpi-pico-info', '');
             }
 
-            texto('kpi-cpu', percentual(dados.atual.cpu_percent));
-            texto('kpi-ram', percentual(dados.atual.memoria_percent));
-            texto('kpi-disco', percentual(dados.atual.disco_percent));
-
-            texto('kpi-cpu-info', '');
-            texto('kpi-ram-info', '');
-            texto('kpi-disco-info', '');
-
-            for (const [tipo, grafico] of Object.entries(graficos)) {
-                preencherGrafico(grafico, dados.historico[tipo]);
+            // KPI: Espaço livre em disco (do módulo da Ana-Clara)
+            if (ultimoDiscoObj && ultimoDiscoObj.disco_livre_gb != null) {
+                texto('kpi-disco-livre', `${formato.format(Number(ultimoDiscoObj.disco_livre_gb))} GB`);
+                texto('kpi-disco-livre-info', ultimoDiscoObj.disco_total_gb != null
+                    ? `de ${formato.format(Number(ultimoDiscoObj.disco_total_gb))} GB no total`
+                    : '');
+            } else if (ultimoDiscoPct !== null) {
+                texto('kpi-disco-livre', percentual(100 - ultimoDiscoPct));
+                texto('kpi-disco-livre-info', 'livre no volume');
+            } else {
+                texto('kpi-disco-livre', '—');
+                texto('kpi-disco-livre-info', 'Aguardando leitura de disco');
             }
 
-            const recebidas = dados.historico['Rede Recebida'] || [];
-            const enviadas = dados.historico['Rede Enviada'] || [];
-            const calcularTaxasMbps = leituras => {
-                const ordenadas = [...leituras].sort((a, b) => a.timestamp.localeCompare(b.timestamp));
-                return ordenadas.slice(1).map((leitura, indice) => {
-                    const anterior = ordenadas[indice];
-                    const segundos = (Date.parse(leitura.timestamp) - Date.parse(anterior.timestamp)) / 1000;
-                    const diferencaMiB = leitura.valor - anterior.valor;
-                    return Number.isFinite(diferencaMiB) && diferencaMiB >= 0 && segundos > 0
-                        ? (diferencaMiB * 8.388608) / segundos
-                        : null;
-                }).map((taxa, indice) => ({ timestamp: ordenadas[indice + 1].timestamp, taxa }))
-                    .slice(-MAX_PONTOS);
-            };
-            // Calcula cada direção separadamente; os horários das inserções podem diferir.
-            const downloads = calcularTaxasMbps(dados.historico['Rede Recebida'] || []);
-            const uploads = calcularTaxasMbps(dados.historico['Rede Enviada'] || []);
-            const horariosRede = [...new Set([
-                ...downloads.map(ponto => ponto.timestamp),
-                ...uploads.map(ponto => ponto.timestamp),
-            ])].sort();
-            const alinharTaxas = pontos => new Map(pontos.map(ponto => [ponto.timestamp, ponto.taxa]));
-            const mapaDownload = alinharTaxas(downloads);
-            const mapaUpload = alinharTaxas(uploads);
-            graficoRede.data.labels = horariosRede.map(horario => new Date(horario).toLocaleTimeString('pt-BR'));
-            graficoRede.data.datasets[0].data = horariosRede.map(horario => mapaDownload.get(horario) ?? null);
-            graficoRede.data.datasets[1].data = horariosRede.map(horario => mapaUpload.get(horario) ?? null);            graficoRede.update(reduzMovimento.matches ? 'none' : undefined);
-            texto('network-status', !recebidas.length || !enviadas.length
-                ? 'Sem capturas de rede para este servidor.'
-                : !downloads.length || !uploads.length
-                    ? 'Aguardando a segunda captura para calcular a velocidade.'
-                    : 'Velocidade em Mbps de recebimento e envio');
-
-            renderizarKpis(dados.kpis || {});
-
-            texto(
-                'metrics-status',
-                dados.atual.horario_formatado
-                    ? ``
-                    : ''
-            );
+            const ultimaHora = leiturasCpu.at(-1)?.horario || leiturasRam.at(-1)?.horario || ultimoDiscoObj?.horario || '';
+            texto('metrics-status', ultimaHora ? `Consolidado dos módulos · Última leitura: ${ultimaHora}` : 'Aguardando dados dos módulos...');
             status.dataset.error = 'false';
         } catch (erro) {
             if (!document.hidden) {
-                texto('metrics-status', '');
+                texto('metrics-status', 'Falha ao consolidar métricas individuais.');
                 status.dataset.error = 'true';
                 console.error('Falha ao atualizar métricas:', erro);
             }
@@ -259,10 +276,10 @@ function idServidorAtual() {
         corpo.replaceChildren(linha);
     }
 
-    function renderizar(dados) {
+    function renderizar(alertas) {
         corpo.replaceChildren();
 
-        for (const alerta of dados.alertas) {
+        for (const alerta of alertas) {
             const linha = document.createElement('tr');
             const recurso = document.createElement('td');
             const valor = document.createElement('td');
@@ -271,12 +288,12 @@ function idServidorAtual() {
             const data = document.createElement('td');
             const selo = document.createElement('span');
 
-            recurso.textContent = alerta.recurso;
-            valor.textContent = `${formato.format(alerta.valor_medido)} ${alerta.unidade}`;
-            limite.textContent = `${formato.format(alerta.limite)} ${alerta.unidade}`;
-            data.textContent = alerta.data || '—';
+            recurso.textContent = alerta.recurso || '—';
+            valor.textContent = `${formato.format(Number(alerta.valor_medido ?? 0))} ${alerta.unidade || ''}`.trim();
+            limite.textContent = alerta.limite != null ? `${formato.format(Number(alerta.limite))} ${alerta.unidade || ''}`.trim() : '—';
+            data.textContent = alerta.horario_captura || alerta.data || '—';
 
-            const critico = alerta.nivel === 'CRITICO';
+            const critico = String(alerta.nivel).toUpperCase() === 'CRITICO';
             selo.className = `alert-level alert-level--${critico ? 'critical' : 'warning'}`;
             selo.textContent = critico ? 'Crítico' : 'Atenção';
             nivel.append(selo);
@@ -284,12 +301,28 @@ function idServidorAtual() {
             corpo.append(linha);
         }
 
-        if (!dados.alertas.length) {
-            mostrarVazio('');
+        if (!alertas.length) {
+            mostrarVazio('Nenhum alerta registrado nos servidores monitorados.');
         }
 
-        contador.textContent = String(dados.total ?? dados.alertas.length);
-        status.textContent = 'Exibindo alertas';
+        // Atualiza os 2 KPIs baseados em alertas na Dashboard Geral
+        const criticos = alertas.filter(a => String(a.nivel).toUpperCase() === 'CRITICO').length;
+        const elCriticos = document.getElementById('kpi-criticos');
+        if (elCriticos) elCriticos.textContent = String(criticos);
+
+        const contagemPorRecurso = {};
+        for (const a of alertas) {
+            const nomeRec = a.recurso || 'Outro';
+            contagemPorRecurso[nomeRec] = (contagemPorRecurso[nomeRec] || 0) + 1;
+        }
+        const maisAlertas = Object.entries(contagemPorRecurso).sort((a, b) => b[1] - a[1])[0];
+        const elMaisAlertas = document.getElementById('kpi-recurso-alertas');
+        const elMaisAlertasInfo = document.getElementById('kpi-recurso-alertas-info');
+        if (elMaisAlertas) elMaisAlertas.textContent = maisAlertas ? maisAlertas[0] : '—';
+        if (elMaisAlertasInfo) elMaisAlertasInfo.textContent = maisAlertas ? `${maisAlertas[1]} alerta(s) registrado(s)` : '';
+
+        contador.textContent = String(alertas.length);
+        status.textContent = 'Alertas consolidados dos servidores';
         recebeuDados = true;
     }
 
@@ -302,25 +335,26 @@ function idServidorAtual() {
         const limite = setTimeout(() => controller.abort(), 8000);
 
         try {
-            const resposta = await fetch('/alertas?id_servidor=' + idServidorAtual(), {
-                cache: 'no-store',
-                signal: controller.signal,
-            });
-            if (!resposta.ok) throw new Error(`HTTP ${resposta.status}`);
+            // Busca os alertas de todos os servidores individuais em paralelo
+            const idsUnicos = [...new Set(Object.values(SERVIDORES_INDIVIDUAIS))];
+            const respostas = await Promise.all(
+                idsUnicos.map(id =>
+                    fetch(`/alertas?id_servidor=${id}`, { cache: 'no-store', signal: controller.signal })
+                        .then(r => (r.ok ? r.json() : { alertas: [] }))
+                        .catch(() => ({ alertas: [] }))
+                )
+            );
 
-            const dados = await resposta.json();
-            if (!Array.isArray(dados.alertas)) {
-                throw new Error('Resposta /alertas inválida.');
-            }
-            if (!document.hidden) renderizar(dados);
+            const todosAlertas = respostas.flatMap(d => (Array.isArray(d.alertas) ? d.alertas : []));
+            // Ordena pelos mais recentes
+            todosAlertas.sort((a, b) => String(b.data || b.horario_captura || '').localeCompare(String(a.data || a.horario_captura || '')));
+
+            if (!document.hidden) renderizar(todosAlertas);
         } catch (erro) {
             if (!document.hidden) {
-                status.textContent = recebeuDados
-                    ? ''
-                    : '';
                 if (!recebeuDados) {
                     contador.textContent = '—';
-                    mostrarVazio('');
+                    mostrarVazio('Erro ao carregar alertas consolidados.');
                 }
                 console.error('Falha ao atualizar alertas:', erro);
             }
